@@ -4,19 +4,30 @@ import json
 from villager.db import db, CountryModel, SubdivisionModel, LocalityModel
 import re
 from typing import Optional
+import hashlib
+import zipfile
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def run_all_loaders() -> None:
+def run() -> None:
     """
     Connects to the database, runs the data loading functions sequentially,
     then closes the database connection.
     """
 
+    db.execute_sql("PRAGMA journal_mode = OFF;")
+    db.execute_sql("PRAGMA synchronous = OFF;")
+    db.execute_sql("PRAGMA temp_store = MEMORY;")
+    db.execute_sql("PRAGMA cache_size = -100000;")
+    db.execute_sql("PRAGMA locking_mode = EXCLUSIVE;")
+
     load_countries()
     load_subdivisions()
     load_localities()
+
+    db.execute_sql("VACUUM;")
+    compress_sqlite_db(db.database)
 
 
 def chunked(iterable, size):
@@ -121,6 +132,8 @@ def load_localities() -> None:
     country_map = {c.alpha2: c for c in CountryModel.select()}
     sub_map = {s.iso_code: s for s in SubdivisionModel.select()}
 
+    seen = set()
+
     for country_dir in locality_dir.iterdir():
         if not country_dir.is_dir():
             continue
@@ -139,6 +152,14 @@ def load_localities() -> None:
                 for line in f:
                     try:
                         data: dict = json.loads(line)
+
+                        osm_id = data.get("osm_id")
+                        if not osm_id:
+                            continue
+                        if osm_id in seen:
+                            continue
+                        seen.add(osm_id)
+
                         name = filter_locality_name(data.get("name"))
                         if not name:
                             continue
@@ -148,15 +169,23 @@ def load_localities() -> None:
                             continue
 
                         lng, lat = data.get("location", (None, None))
+
                         admin1_iso_code = extract_iso_code(address)
                         admin1: SubdivisionModel = sub_map.get(admin1_iso_code)
+                        if not admin1:
+                            continue
 
                         country: CountryModel = country_map.get(
                             address.get("country_code", "").upper()
                         )
 
-                        if not admin1:
+                        hashed_name_admin1 = hashlib.sha256(
+                            f"{name}{admin1.iso_code}".encode()
+                        ).hexdigest()
+
+                        if hashed_name_admin1 in seen:
                             continue
+                        seen.add(hashed_name_admin1)
 
                         localities.append(
                             {
@@ -172,7 +201,7 @@ def load_localities() -> None:
                                 "lng": lng,
                                 "classification": classification,
                                 "osm_type": data.get("osm_type"),
-                                "osm_id": data.get("osm_id"),
+                                "osm_id": osm_id,
                                 "population": data.get("population", None),
                             }
                         )
@@ -193,5 +222,16 @@ def load_localities() -> None:
                 raise e
 
 
+def compress_sqlite_db(db_path: str | Path) -> Path:
+    db_path = Path(db_path)
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database file not found: {db_path}")
+
+    with zipfile.ZipFile(
+        "src/villager/db/villager_db.zip", "w", compression=zipfile.ZIP_DEFLATED
+    ) as zipf:
+        zipf.write(db_path, arcname=db_path.name)
+
+
 if __name__ == "__main__":
-    run_all_loaders()
+    run()
