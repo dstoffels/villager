@@ -1,4 +1,4 @@
-from piecountry import countries, subdivisions
+from villager import countries, subdivisions
 from pathlib import Path
 
 dest = Path(__file__).parent.parent / "piecountry" / "literals.py"

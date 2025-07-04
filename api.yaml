@@ -1,0 +1,72 @@
+villager:
+  countries:
+    get:
+      description: >
+        Lookup a country by exact name, alpha-2, alpha-3, or numeric code.
+        Returns a single Country or None.
+      returns: Country | None
+    search:
+      description: >
+        Fuzzy search countries by name, alpha-2, or alpha-3 code.
+        Returns a list of (Country, match_score) tuples.
+      returns: List[Tuple[Country, float]]
+
+  subdivisions:
+    by_country:
+      description: >
+        Returns all subdivisions for a given country, using country name or code (alpha-2/3).
+      returns: List[Subdivision]
+    lookup_types:
+      description: >
+        Returns all subdivision types defined for a given country name or code (e.g. "state", "province").
+      returns: List[str]
+    lookup:
+      description: >
+        Exact-match lookup by subdivision name, ISO code, or alpha-2 code.
+      returns: List[Subdivision]
+    lookup_by_country:
+      description: >
+        Exact-match lookup by subdivision name/ISO/alpha-2, filtered by a specific country.
+      returns: List[Subdivision]
+    search:
+      description: >
+        Fuzzy search subdivisions by name, ISO code, or alpha-2.
+      returns: List[Tuple[Subdivision, float]]
+    search_by_country:
+      description: >
+        Fuzzy search subdivisions by name/ISO/alpha-2, filtered by country.
+      returns: List[Tuple[Subdivision, float]]
+
+  localities:
+    by_country:
+      description: >
+        Return all localities for a given country name/code (alpha-2/3).
+      returns: List[Locality]
+    by_subdivision:
+      description: >
+        Return all localities for a given subdivision code.
+      returns: List[Locality]
+    lookup:
+      description: >
+        Exact-match lookup by locality name or OSM ID.
+      returns: List[Locality]
+    lookup_by_country:
+      description: >
+        Exact-match lookup by name or OSM ID, filtered by country name/code.
+      returns: List[Locality]
+    lookup_by_subdivision:
+      description: >
+        Exact-match lookup by name or OSM ID, filtered by subdivision code.
+      returns: List[Locality]
+    search:
+      description: >
+        Fuzzy search by locality name or display name.
+      returns: List[Tuple[Locality, float]]
+    search_by_country:
+      description: >
+        Fuzzy search localities by name/display_name, filtered by country.
+      returns: List[Tuple[Locality, float]]
+    search_by_subdivision:
+      description: >
+        Fuzzy search localities by name/display_name, filtered by subdivision.
+      returns: List[Tuple[Locality, float]]
