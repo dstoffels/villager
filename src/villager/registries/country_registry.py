@@ -4,20 +4,15 @@ from ..types import Country
 from ..literals import CountryCode, CountryName, CountryNumeric
 from typing import Optional
 from rapidfuzz import process, fuzz
-from peewee import fn
 
 
 class CountryRegistry(Registry[CountryModel, Country]):
     """
     Registry for managing Country entities.
 
-    Supports exact lookup by alpha2, alpha3, numeric codes, or country name,
-    as well as fuzzy search by these fields.
+    Supports get by alpha2, alpha3 & numeric codes, lookup by country name with support for some aliases/former names,
+    and fuzzy search.
     """
-
-    ALIASES = {
-        "uk": "gb",
-    }
 
     def __init__(self, db, model):
         super().__init__(db, model)
@@ -29,13 +24,12 @@ class CountryRegistry(Registry[CountryModel, Country]):
         if isinstance(identifier, int):
             model = self._model.get_or_none(CountryModel.numeric == identifier)
         else:
+            identifier = self.CODE_ALIASES.get(identifier.lower(), identifier)
             model = self._model.get_or_none(
-                (fn.LOWER(CountryModel.alpha2.collate("NOCASE")) == identifier.lower())
-                | (
-                    fn.LOWER(CountryModel.alpha3.collate("NOCASE"))
-                    == identifier.lower()
-                )
+                (CountryModel.alpha2.collate("NOCASE") == identifier)
+                | (CountryModel.alpha3.collate("NOCASE") == identifier)
             )
+
         if model:
             return model.to_dto()
 
@@ -44,8 +38,9 @@ class CountryRegistry(Registry[CountryModel, Country]):
         if not identifier:
             return []
 
+        identifier = self.ALIASES.get(identifier.lower(), identifier)
         models: list[CountryModel] = self._model.select().where(
-            fn.LOWER(CountryModel.name.collate("NOCASE")) == identifier.lower()
+            CountryModel.name.collate("NOCASE") == identifier
         )
         if models:
             return [m.to_dto() for m in models]
@@ -57,7 +52,43 @@ class CountryRegistry(Registry[CountryModel, Country]):
     def _load_cache(self) -> list[Country]:
         return super()._load_cache()
 
-        # lookup caches
+    CODE_ALIASES = {
+        "uk": "GB",
+    }
+
+    ALIASES = {
+        "england": "United Kingdom",
+        "scotland": "United Kingdom",
+        "wales": "United Kingdom",
+        "northern ireland": "United Kingdom",
+        "great britain": "United Kingdom",
+        "britain": "United Kingdom",
+        "united states of america": "United States",
+        "america": "United States",
+        "czech republic": "Czechia",
+        "ivory coast": "Côte d'Ivoire",
+        "cote d'ivoire": "Côte d'Ivoire",
+        "burma": "Myanmar",
+        "swaziland": "Eswatini",
+        "holland": "Netherlands",
+        "macedonia": "North Macedonia",
+        "cape verde": "Cabo Verde",
+        "laos": "Lao People's Democratic Republic",
+        "syria": "Syrian Arab Republic",
+        "russia": "Russian Federation",
+        "ussr": "Russian Federation",
+        "soviet union": "Russian Federation",
+        "vietnam": "Viet Nam",
+        "zaire": "Congo",
+        "brunei": "Brunei Darussalam",
+        "são tomé and príncipe": "Sao Tome and Principe",
+        "east timor": "Timor-Leste",
+        "yugoslavia": "Serbia",
+        "east germany": "Germany",
+        "west germany": "Germany",
+    }
+
+    # lookup caches
 
     #     self._by_name: dict[str, Country] = {}
     #     self._by_code: dict[str, Country] = {}
