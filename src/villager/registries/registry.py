@@ -1,8 +1,7 @@
 from typing import Iterator, Generic, TypeVar
 from abc import abstractmethod, ABC
-import unicodedata, re
 from peewee import SqliteDatabase
-from ..db.models import BaseModel, DTOModel
+from ..db.models import DTOModel
 from typing import Type
 
 TModel = TypeVar("TModel", bound=DTOModel)
@@ -36,16 +35,6 @@ class Registry(Generic[TModel, TDTO], ABC):
     @property
     def count(self) -> int:
         return self.__len__()
-
-    @staticmethod
-    def _normalize(s: str) -> str:
-        # normalize unicode
-        s = s.lower()
-        s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
-        # strip punctuation
-        s = re.sub(r"[^\w\s]", "", s)
-        s = re.sub(r"\s+", " ", s).strip()
-        return s
 
     @abstractmethod
     def get(self, identifier: str | int) -> TDTO | None:

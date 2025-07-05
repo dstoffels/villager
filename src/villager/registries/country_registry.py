@@ -4,6 +4,7 @@ from ..types import Country
 from ..literals import CountryCode, CountryName, CountryNumeric
 from typing import Optional
 from rapidfuzz import process, fuzz
+from ..utils import normalize
 
 
 class CountryRegistry(Registry[CountryModel, Country]):
@@ -20,6 +21,8 @@ class CountryRegistry(Registry[CountryModel, Country]):
     def get(self, identifier: CountryCode | CountryNumeric) -> Optional[Country]:
         if not identifier:
             return None
+
+        identifier = normalize(identifier)
 
         if isinstance(identifier, int):
             model = self._model.get_or_none(CountryModel.numeric == identifier)
@@ -39,8 +42,10 @@ class CountryRegistry(Registry[CountryModel, Country]):
             return []
 
         identifier = self.ALIASES.get(identifier.lower(), identifier)
+        identifier = normalize(identifier)
+
         models: list[CountryModel] = self._model.select().where(
-            CountryModel.name.collate("NOCASE") == identifier
+            CountryModel.normalized_name.collate("NOCASE") == identifier
         )
         if models:
             return [m.to_dto() for m in models]

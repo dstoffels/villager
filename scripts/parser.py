@@ -12,6 +12,7 @@ import re
 from typing import Optional
 import hashlib
 import zipfile
+from villager.utils import normalize
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -52,6 +53,7 @@ def load_countries() -> None:
             countries.append(
                 {
                     "name": row["name_short"],
+                    "normalized_name": normalize(row["name_short"]),
                     "alpha2": row["#country_code_alpha2"],
                     "alpha3": row["country_code_alpha3"],
                     "numeric": int(row["numeric_code"]),
@@ -91,6 +93,7 @@ def load_subdivisions() -> None:
             subdivisions.append(
                 {
                     "name": row["subdivision_name"],
+                    "normalized_name": normalize(row["subdivision_name"]),
                     "iso_code": iso_code,
                     "code": iso_code.split("-")[-1] if "-" in iso_code else iso_code,
                     "category": row.get("category") or None,
@@ -230,6 +233,7 @@ def load_localities() -> None:
                         localities.append(
                             {
                                 "name": name,
+                                "normalized_name": normalize_name(name),
                                 "subdivision": subdivision,
                                 "country": country,
                                 "lat": lat,

@@ -3,23 +3,26 @@ from villager import countries, Country
 
 
 class TestCountryGet:
-    def test_country_get_us(self):
-        country = countries.get("US")
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.name == "United States"
+    def test_country_get(self):
+        for c in countries:
+            country = countries.get(c.alpha2)
+            assert isinstance(country, Country)
+            assert country is not None
+            assert c.alpha2 == country.alpha2
 
     def test_country_get_by_alpha3(self):
-        country = countries.get("USA")
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.alpha2 == "US"
+        for c in countries:
+            country = countries.get(c.alpha3)
+            assert isinstance(country, Country)
+            assert country is not None
+            assert c.alpha3 == country.alpha3
 
     def test_country_get_by_numeric(self):
-        country = countries.get(840)
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.alpha2 == "US"
+        for c in countries:
+            country = countries.get(c.numeric)
+            assert isinstance(country, Country)
+            assert country is not None
+            assert c.numeric == country.numeric
 
     def test_country_get_with_alias(self):
         for alias, alpha_2 in countries.CODE_ALIASES.items():
@@ -29,15 +32,19 @@ class TestCountryGet:
             assert country.alpha2 == alpha_2
 
     def test_country_get_is_case_insensitive(self):
-        country = countries.get("uk")
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.alpha2 == "GB"
+        for c in countries:
+            country = countries.get(c.alpha2.lower())
+            assert isinstance(country, Country)
+            assert country is not None
+            assert c.alpha2 == country.alpha2
 
-        country = countries.get("usa")
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.alpha2 == "US"
+    def test_country_get_input_normalization(self):
+        for c in countries:
+            test = f"   {'.'.join(c.alpha2.split())}   "
+            country = countries.get(test)
+            assert isinstance(country, Country)
+            assert country is not None
+            assert c.alpha2 == country.alpha2
 
     def test_country_get_none(self):
         country = countries.get("ZZZ")
@@ -45,11 +52,13 @@ class TestCountryGet:
 
 
 class TestCountryLookup:
-    def test_country_lookup_us(self):
-        country = countries.lookup("United States")[0]
-        assert isinstance(country, Country)
-        assert country is not None
-        assert country.alpha2 == "US"
+    def test_country_lookup(self):
+        for c in countries:
+            results = countries.lookup(c.name)
+            assert results
+            assert len(results) > 0
+            country = results[0]
+            assert country.name == c.name
 
     def test_country_lookup_dupes(self):
         results = countries.lookup("Congo")
@@ -72,6 +81,10 @@ class TestCountryLookup:
         assert country is not None
         assert country.alpha2 == "US"
 
+    def test_country_lookup_trims_whitespace(self):
+        results = countries.lookup("   united states   ")
+        assert results[0].alpha2 == "US"
+
     def test_country_lookup_empty(self):
         results = countries.lookup("california")
         assert results == []
@@ -85,6 +98,7 @@ class TestCountryLookup:
 #         assert country.name == "Georgia"
 #         assert country.alpha2 == "GE"
 #         assert score == 100
+
 
 #     def test_alpha2_should_rank_first(self):
 #         results = countries.search("FR")

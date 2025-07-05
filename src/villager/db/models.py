@@ -32,13 +32,15 @@ class DTOModel(Generic[T]):
 
 
 class BaseModel(Model):
+    id = AutoField()
+    name = CharField(index=True)
+    normalized_name = CharField(index=True)
+
     class Meta:
         database = db
 
 
 class CountryModel(BaseModel, DTOModel[Country]):
-    id = AutoField()
-    name = CharField(index=True)
     alpha2 = CharField(unique=True, max_length=2)
     alpha3 = CharField(unique=True, max_length=3)
     numeric = IntegerField(unique=True)
@@ -58,8 +60,6 @@ class CountryModel(BaseModel, DTOModel[Country]):
 
 
 class SubdivisionModel(BaseModel, DTOModel[Subdivision]):
-    id = AutoField()
-    name = CharField(index=True)
     alt_name = CharField(index=True, null=True)
     iso_code = CharField(unique=True)
     code = CharField(index=True)
@@ -100,8 +100,6 @@ class SubdivisionModel(BaseModel, DTOModel[Subdivision]):
 
 
 class LocalityModel(BaseModel, DTOModel[Locality]):
-    id = AutoField()
-    name = CharField(index=True)
     subdivision: SubdivisionModel = ForeignKeyField(
         SubdivisionModel, backref="localities"
     )
