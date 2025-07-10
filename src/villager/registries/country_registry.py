@@ -51,6 +51,12 @@ class CountryRegistry(Registry[CountryModel, Country]):
         )
         return [m.to_dto() for m in models]
 
+    @property
+    def _sql_filter_base(self):
+        return f"""SELECT c.*, f.tokens FROM countries_fts f
+        JOIN countries c ON f.rowid = c.id
+        """
+
     def search(self, query, limit=5, **kwargs) -> list[tuple[Country, float]]:
         """Fuzzy search countries by name, alpha-2, or alpha-3 code.
 
@@ -68,13 +74,10 @@ class CountryRegistry(Registry[CountryModel, Country]):
         if exact_matches:
             return [(m, 1.0) for m in exact_matches]
 
-        return self._fuzzy_search(query, limit)
+        query = normalize(query)
+        # self._build_sql_query(self._build_fts_query(query))
 
-    def _build_sql(self):
-        return """SELECT c.*, tokens FROM countries_fts f
-        JOIN countries c ON f.rowid = c.id
-        WHERE f.tokens MATCH ?
-        LIMIT ?"""
+        return self._fuzzy_search(query, limit)
 
     CODE_ALIASES = {
         "uk": "GB",

@@ -110,7 +110,7 @@ class TestSearch:
                 country.alpha3 == c.alpha3
             ), f"Expected result {country.alpha3} to match {c.alpha3}"
 
-    def test_minor_typos(self):
+    def test_typos_top1(self):
         seeds = range(20)  # Test different seeds
         success_count = 0
         total = 0
@@ -127,6 +127,9 @@ class TestSearch:
                     continue
 
                 top_result, score = results[0]
+                # assert (
+                #     top_result.name == c.name
+                # ), f"{test} -> {top_result.name} != {c.name}"
                 if top_result.name == c.name:
                     success_count += 1
 

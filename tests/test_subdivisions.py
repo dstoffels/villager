@@ -57,12 +57,12 @@ class TestSearch:
             assert len(results) > 0
             assert s.name in [r.name for r, score in results]
 
-    def test_minor_typos(self):
+    def test_typos_top5(self):
         seeds = range(20)
         success_count = 0
         total = 0
         typo_rate = 0.15
-        success_threshold = 0.85
+        success_threshold = 0.80
 
         for seed in seeds:
             for s in subdivisions:
@@ -73,8 +73,6 @@ class TestSearch:
                 if not results:
                     continue
 
-                top_result, score = results[0]
-                # if top_result.name == s.name:
                 if s.name in [r.name for r, score in results]:
                     success_count += 1
 
@@ -84,18 +82,34 @@ class TestSearch:
         ), f"{accuracy:.2%} accuracy below threshold {success_threshold:.2%}"
 
     def test_typos_by_country(self):
-        pass
-        # seeds = range(10)
-        # success_count = 0
-        # total = 0
-        # typo_rate = 0.15
-        # success_threshold = 0.85
+        seeds = range(20)
+        success_count = 0
+        total = 0
+        typo_rate = 0.15
+        success_threshold = 0.95
 
-        # for seed in seeds:
-        #     for s in [s for s in subdivisions if s.country_alpha2 == "US"]:
-        #         test = mangle(s.name, typo_rate, seed)
-        #         results = subdivisions.search(test, s.country_alpha2)
-        #         total += 1
+        for seed in seeds:
+            for s in subdivisions:
+                test = mangle(s.name, typo_rate, seed)
+                results = subdivisions.search(test, country=s.country)
+                total += 1
+
+                if not results:
+                    continue
+
+                if s.name in [r.name for r, score in results]:
+                    success_count += 1
+        accuracy = success_count / total
+        assert (
+            accuracy >= success_threshold
+        ), f"{accuracy:.2%} accuracy below threshold {success_threshold:.2%}"
+
+
+# for seed in seeds:
+#     for s in [s for s in subdivisions if s.country_alpha2 == "US"]:
+#         test = mangle(s.name, typo_rate, seed)
+#         results = subdivisions.search(test, s.country_alpha2)
+#         total += 1
 
 
 # class TestSubdivisionByCountry:

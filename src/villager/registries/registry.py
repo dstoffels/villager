@@ -46,6 +46,9 @@ class Registry(Generic[TModel, TDTO], ABC):
         self._dto_cls: Type[TDTO] = dto_cls
         self._count: int | None = None
         self._cache: Cache[TModel, TDTO] | None = None
+        self._sql_filter: str = ""
+        self._sql_filter_appendix: str = ""
+        self._update_candidates: bool = True
 
     def __iter__(self) -> Iterator[TDTO]:
         return (item.dto for item in self.cache.values())
@@ -77,17 +80,31 @@ class Registry(Generic[TModel, TDTO], ABC):
         return []
 
     @abstractmethod
-    def _build_sql(self) -> str:
+    def search(self, query: str, limit=100, **kwargs) -> list[TDTO]:
+        return []
+
+    @property
+    def _sql_filter_base(self) -> str:
         return ""
 
-    def _query_fts(self, fts_query: str, limit=100) -> list[tuple[TDTO, str]]:
-        cursor = db.execute_sql(
-            self._build_sql(),
-            (fts_query, limit),
-        )
-        return [(self._dto_cls.from_row(r), r[len(r) - 1]) for r in cursor]
+    def _build_sql_query(self) -> None:
+        self._sql_filter = self._sql_filter_base + self._sql_filter_appendix
 
-    def _score(self, norm_query: str, fts_tokens: str, threshold=0.7) -> float:
+    def _build_fts_query(self, query: str, limit=100) -> str:
+        tokens = query.split(" ")
+        fts_q = " ".join([f"{t}*" for t in tokens])
+        self._sql_filter_appendix = (
+            f"""WHERE f.tokens MATCH "{fts_q}" ORDER BY rank LIMIT {limit}"""
+        )
+        self._build_sql_query()
+
+    def _filter_candidates(self) -> list[tuple[int, TDTO, str]]:
+        """Returns a list of (id, dto, fts_tokens) tuples for candidates."""
+        cursor = db.execute_sql(self._sql_filter)
+        return [(r[0], self._dto_cls.from_row(r), r[len(r) - 1]) for r in cursor]
+
+    def _score(self, norm_query: str, fts_tokens: str, threshold=0.6) -> float:
+        """Scores a query against a FTS token string."""
         q_tokens = norm_query.split()
         f_tokens = fts_tokens.split()
         q_len = len(q_tokens)
@@ -95,7 +112,7 @@ class Registry(Generic[TModel, TDTO], ABC):
 
         match_scores = []
 
-        # Score each query token against all FTS tokens, collect best match & index
+        # Score each query token against all FTS tokens, collect best match
         for qt in q_tokens:
             best = max(fuzz.ratio(qt, ft) for ft in f_tokens) / 100
             if best >= threshold:
@@ -104,39 +121,46 @@ class Registry(Generic[TModel, TDTO], ABC):
         if not match_scores:
             return 0.0
 
+        avg_weight = 0.7
+        coverage_weight = 1 - avg_weight
+
         # avg per query token
-        avg_match_score = 0.7 * (sum(match_scores) / q_len)
+        avg_match_score = avg_weight * (sum(match_scores) / q_len)
 
         # fraction of FTS tokens matched
-        coverage = 0.3 * len(match_scores) / f_len if f_tokens else 0
+        coverage = coverage_weight * len(match_scores) / f_len if f_tokens else 0
 
         return avg_match_score + coverage
 
-    def _fuzzy_search(self, query: str, limit: int = 5) -> list[TDTO]:
-        norm_query = normalize(query)
+    def _fuzzy_search(self, norm_query: str, limit: int) -> list[TDTO]:
         tokens = norm_query.split(" ")
 
         matches: dict[int, tuple[TDTO, float]] = {}
 
+        candidates = self._filter_candidates()
+
         while len(matches) < limit:
-
-            fts_q = " ".join([f"{t}*" for t in tokens])
-            results = self._query_fts(fts_q, limit=100)
-
-            for r, fts_tokens in results:
-                if r.id in matches:
+            for id, r, fts_tokens in candidates:
+                if id in matches:
                     continue
                 score = self._score(norm_query, fts_tokens)
 
                 if score > 0.4:
-                    matches[r.id] = (r, score)
+                    matches[id] = (r, score)
 
             if all(len(t) <= 1 for t in tokens):
                 break
 
             for i, t in enumerate(tokens):
-                if len(t) > 1:
+                t_len = len(t)
+                if t_len > 2:
+                    tokens[i] = t[:-2]
+                elif t_len > 1:
                     tokens[i] = t[:-1]
+
+            if self._update_candidates:
+                self._build_fts_query(" ".join(tokens))
+                candidates = self._filter_candidates()
 
         return sorted(matches.values(), key=lambda x: x[1], reverse=True)[:limit]
 

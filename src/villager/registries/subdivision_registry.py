@@ -54,6 +54,20 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
         if not query:
             return []
 
+        query = normalize(query)
+        # reset
+        self._update_candidates = True
+
+        if country:
+            self._update_candidates = False
+            self._sql_filter_appendix = f"""WHERE c.alpha2 = "{country}" COLLATE NOCASE
+                                            OR c.alpha3 = "{country}" COLLATE NOCASE
+                                            OR c.name = "{normalize(country)}" COLLATE NOCASE
+                                            """
+            self._build_sql_query()
+        else:
+            self._build_fts_query(query)
+
         # find exact matches
         exact_matches = self.lookup(query)
         if exact_matches:
@@ -61,13 +75,11 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
 
         return self._fuzzy_search(query, limit)
 
-    def _build_sql(self):
-        return """SELECT s.*, c.*, tokens FROM subdivisions_fts f
+    @property
+    def _sql_filter_base(self):
+        return f"""SELECT s.*, c.*, f.tokens FROM subdivisions_fts f
         JOIN subdivisions s ON f.rowid = s.id
         JOIN countries c ON s.country_id = c.id
-        WHERE f.tokens MATCH ?
-        ORDER BY rank
-        LIMIT ?
         """
 
     def _load_cache(self):

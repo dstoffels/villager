@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 
 @dataclass
 class DTOBase(ABC):
-    id: int
-
     @classmethod
     @abstractmethod
     def from_row(cls, row: tuple):
@@ -44,7 +42,6 @@ class Country(DTOBase):
     @classmethod
     def from_row(cls, tuple: tuple) -> "Country":
         return Country(
-            id=tuple[0],
             name=tuple[1],
             alpha2=tuple[3],
             alpha3=tuple[4],
@@ -84,7 +81,6 @@ class Subdivision(SubdivisionBase):
     @classmethod
     def from_row(cls, tuple: tuple) -> "Subdivision":
         return Subdivision(
-            id=tuple[0],
             name=tuple[1],
             iso_code=tuple[3],
             alt_name=tuple[4],
@@ -117,7 +113,6 @@ class Locality(DTOBase):
     @classmethod
     def from_row(cls, tuple: tuple) -> "Locality":
         return Locality(
-            osm_id=tuple[0],
             osm_type=tuple[1],
             name=tuple[2],
             display_name=tuple[3],
