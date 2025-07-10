@@ -16,8 +16,8 @@ class DTOBase(ABC):
     def json(self):
         return json.dumps(self.to_dict())
 
-    def __str__(self):
-        return self.json(indent=2)
+    # def __str__(self):
+    #     return self.json()
 
 
 c = (
@@ -71,7 +71,7 @@ class SubdivisionBase(DTOBase):
 
 @dataclass
 class Subdivision(SubdivisionBase):
-    """Represents a country subdivision such as a state, province, or territory."""
+    """A country subdivision such as a state, province, or territory."""
 
     alt_name: str
     country: str
@@ -95,33 +95,57 @@ class Subdivision(SubdivisionBase):
 
 @dataclass
 class Locality(DTOBase):
-    """Represents a geographic locality such as a city, town, village, or hamlet."""
+    """A geographic locality such as a city, town, village, or hamlet."""
 
-    osm_id: int
-    osm_type: str
     name: str
     display_name: str
     classification: str | None
     population: int | None
     lat: float
     lng: float
+    subdivisions: list[SubdivisionBase]
     country: str
     country_alpha2: str
     country_alpha3: str
-    subdivisions: list[SubdivisionBase] = field(default_factory=list)
+    osm_id: int
+    osm_type: str
 
     @classmethod
     def from_row(cls, tuple: tuple) -> "Locality":
+        subdivisions = []
+
+        if tuple[14]:
+            subdivisions.append(
+                SubdivisionBase(
+                    name=tuple[14],
+                    iso_code=tuple[15],
+                    code=tuple[16],
+                    category=tuple[17],
+                    admin_level=tuple[18],
+                )
+            )
+        if tuple[19]:
+            subdivisions.append(
+                SubdivisionBase(
+                    name=tuple[19],
+                    iso_code=tuple[20],
+                    code=tuple[21],
+                    category=tuple[22],
+                    admin_level=tuple[23],
+                )
+            )
+
         return Locality(
-            osm_type=tuple[1],
-            name=tuple[2],
-            display_name=tuple[3],
-            classification=tuple[4],
-            population=tuple[5],
-            lat=tuple[6],
-            lng=tuple[7],
-            country=tuple[8],
-            country_alpha2=tuple[9],
-            country_alpha3=tuple[10],
-            subdivisions=[],
+            name=tuple[1],
+            display_name=f"{tuple[1]}, {tuple[14], tuple[11]}",
+            classification=tuple[9],
+            population=tuple[10],
+            lat=tuple[7],
+            lng=tuple[8],
+            country=tuple[11],
+            country_alpha2=tuple[12],
+            country_alpha3=tuple[13],
+            subdivisions=sorted(subdivisions, key=lambda x: x.admin_level),
+            osm_id=tuple[3],
+            osm_type=tuple[4],
         )

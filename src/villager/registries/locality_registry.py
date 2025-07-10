@@ -30,9 +30,6 @@ class LocalityRegistry(Registry[LocalityModel, Locality]):
     def search(self, query, limit=5):
         return super().search(query, limit)
 
-    def _build_sql_query(self):
-        return super()._build_sql_query()
-
     def get_batch(
         self, limit=1000, offset=0, name_prefix: str | None = None
     ) -> list[Locality]:

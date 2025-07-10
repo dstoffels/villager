@@ -154,9 +154,46 @@
 
 # # cProfile.run("run()")
 
-import villager
+# import villager
+# from villager.db import db
+from villager.types import Locality
 
-results = villager.subdivisions.search("cali", country="United States")
+import sqlite3
 
+conn = sqlite3.connect("src/villager/db/villager.db")
+cursor = conn.cursor()
 
-print(results)
+cursor.execute(
+    """SELECT l.*, 
+      c.name as country_name, 
+      c.alpha2, 
+      c.alpha3,
+      s1.name as subdivision_1_name, 
+      s1.iso_code as subdivision_1_iso_code, 
+      s1.code as sub1_code, 
+      s1.category as sub1_category, 
+      s1.admin_level as sub1_admin_level,
+      s2.name as sub2_name, 
+      s2.iso_code as sub2_iso_code, 
+      s2.code as sub2_code, 
+      s2.category as sub2_category, 
+      s2.admin_level as sub2_admin_level,
+      f.tokens
+FROM localities l
+JOIN subdivisions s1 ON l.subdivision_id = s1.id
+JOIN countries c ON l.country_id = c.id
+LEFT JOIN subdivisions s2 ON s1.parent_iso_code = s2.iso_code
+JOIN localities_fts f ON l.id = f.rowid
+WHERE f.tokens MATCH "madi*"
+ORDER BY rank
+LIMIT 1000;"""
+)
+
+cache = {}
+
+for row in cursor.fetchall():
+    l = Locality.from_row(row)
+    id = row[0]
+    cache[id] = l
+
+    print(l.name)
