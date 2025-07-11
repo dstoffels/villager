@@ -34,6 +34,10 @@ class Database:
             self._conn.close()
             self._conn = None
 
+    def connect(self) -> None:
+        if not self._conn:
+            self._setup_conn()
+
     def commit(self) -> None:
         self._conn.commit()
 

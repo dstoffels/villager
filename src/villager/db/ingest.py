@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import zipfile
 import json
+import os
 
 
 def run() -> None:
