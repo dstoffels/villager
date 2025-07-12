@@ -15,9 +15,6 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
     fuzzy search by these keys, and filtering by country or country code.
     """
 
-    def __init__(self, model_cls, dto_cls):
-        super().__init__(model_cls, dto_cls)
-
     def get(self, iso_code: str) -> Subdivision:
         """Fetch a subdivision by exact iso code."""
         if not iso_code:
@@ -64,17 +61,19 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
         query = normalize(query)
 
         # reset
-        self._update_candidates = True
+        self._use_fts_match = True
         if country:
-            self._update_candidates = False
+            self._use_fts_match = False
             self._search_candidates = self._model_cls.where(
                 f'country = "{country}" OR country_alpha2 = "{country}" or country_alpha3 = "{country}"'
             )
+        else:
+            self._search_candidates = self._model_cls.fts_match(query, exact=True)
 
-        # find exact matches
-        exact_matches = self.lookup(query)
-        if exact_matches:
-            return [(m, 1.0) for m in exact_matches]
+        # # find exact matches
+        # exact_matches = self.lookup(query)
+        # if exact_matches:
+        #     return [(m, 1.0) for m in exact_matches]
 
         return self._fuzzy_search(query, limit)
 

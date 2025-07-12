@@ -67,7 +67,7 @@ class TestSearch:
             assert s.name in [r.name for r, score in results]
 
     def test_typos_top5(self):
-        seeds = range(2)
+        seeds = range(3)
         success_count = 0
         total = 0
         typo_rate = 0.15

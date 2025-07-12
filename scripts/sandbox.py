@@ -1,6 +1,12 @@
 import villager
+from rapidfuzz import fuzz
+import time
 
-cats = villager.subdivisions.search("baja califor")
+start = time.perf_counter()
 
+res = villager.localities.search("sornas")
 
-print(cats)
+duration = time.perf_counter() - start
+
+print([(r.name, s) for r, s in res])
+print(f"Duration: {duration:.3f}s")

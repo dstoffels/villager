@@ -12,9 +12,6 @@ class CountryRegistry(Registry[CountryModel, Country]):
     and fuzzy search.
     """
 
-    def __init__(self, model_cls, dto_cls):
-        super().__init__(model_cls, dto_cls)
-
     def get(self, identifier: CountryCode | CountryNumeric) -> Country | None:
         if not identifier:
             return None
