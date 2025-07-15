@@ -34,19 +34,11 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
         if not name:
             return []
 
-        name = normalize(name)
+        norm_q = normalize(name)
         if country:
-            c = CountryModel.get(
-                (CountryModel.alpha2 == country)
-                | (CountryModel.alpha3 == country)
-                | (CountryModel.normalized_name == normalize(country))
-            )
-            rows = self._model_cls.select(
-                (SubdivisionModel.normalized_name == name)
-                & (SubdivisionModel.country_id == c.id)
-            )
-        else:
-            rows = self._model_cls.select(SubdivisionModel.normalized_name == name)
+            norm_q = f"{norm_q} {country}"
+
+        rows = self._model_cls.fts_match(norm_q, exact=True)
 
         return [r.dto for r in rows]
 

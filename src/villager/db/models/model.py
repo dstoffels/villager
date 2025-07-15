@@ -30,13 +30,11 @@ class RowData(Generic[T]):
     id: int
     dto: T
     tokens: str
-    normalized_name: str
 
     def __iter__(self):
         yield self.id
         yield self.dto
         yield self.tokens
-        yield self.normalized_name
 
 
 class Model(Generic[T], ABC):
@@ -54,8 +52,7 @@ class Model(Generic[T], ABC):
         data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
         id = row["id"]
         tokens = row["tokens"]
-        normalized_name = row["normalized_name"]
-        return RowData(id, cls.dto_class(**data), tokens, normalized_name)
+        return RowData(id, cls.dto_class(**data), tokens)
 
     @classmethod
     def create_table(cls) -> None:
@@ -140,7 +137,9 @@ class Model(Generic[T], ABC):
         return [cls.from_row(row) for row in rows]
 
     @classmethod
-    def fts_match(cls, query: str, limit=100, exact: bool = False) -> list[RowData[T]]:
+    def fts_match(
+        cls, query: str, limit=100, order_by="", exact: bool = False
+    ) -> list[RowData[T]]:
         if not exact:
             tokens = query.split()
             query = " ".join([f"{t}*" for t in tokens])
@@ -152,16 +151,16 @@ class Model(Generic[T], ABC):
         matched = f"""WITH matched AS (
             SELECT rowid, * FROM {fts_table}
             WHERE {fts_table} MATCH ?
-            ORDER BY bm25({fts_table}, 3.0, 1.5, 1.0, 1.0)
-            LIMIT ?
+            ORDER BY bm25({fts_table}, 6.0, 1.5, 1.0, 1.0, 0)
+            LIMIT 200
         )
         """
 
         fts_q = f"""{matched}
                     {cls.query_select}
-                    {" ".join(tables)} 
+                    {" ".join(tables)}
                     LIMIT ?
                     """
 
-        rows = db.execute(fts_q, (query, limit, limit)).fetchall()
+        rows = db.execute(fts_q, (query, limit)).fetchall()
         return [cls.from_row(row) for row in rows]

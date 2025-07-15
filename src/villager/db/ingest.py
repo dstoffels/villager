@@ -71,6 +71,14 @@ def ingest_localities() -> None:
 
     localities: list[tuple[dict, dict]] = []
     seen = set()
+    # types = set()
+    valid_types = {
+        "city",
+        "town",
+        "village",
+        # "hamlet",
+        "administrative",
+    }
 
     for c_dir in locality_dir.iterdir():
         if not c_dir.is_dir():
@@ -80,23 +88,21 @@ def ingest_localities() -> None:
             if not file.is_file():
                 continue
 
-            if "hamlet" in file.stem.lower():
-                continue
-
-            classification = file.stem.replace("place-", "")
-
             with file.open("r", encoding="utf-8") as f:
                 for line in f:
                     try:
                         data: dict = json.loads(line)
+                        type_ = data.get("type")
+                        if type_ not in valid_types:
+                            continue
 
-                        data["classification"] = classification
+                        data["type"] = type_
 
                         data, fts = LocalityModel.parse_raw(data)
 
                         if data and fts:
                             hash = hashlib.sha256(
-                                f"{data.get('name')}{data.get('subdivision_id')}".encode()
+                                f"{data.get('name').strip().lower()}{data.get('subdivision_id')}".encode()
                             ).hexdigest()
                             if hash in seen:
                                 continue
@@ -110,6 +116,7 @@ def ingest_localities() -> None:
                     except Exception as e:
                         print(f"Unexpected error on line: {line}")
                         raise e
+    # print(types)
     with db.atomic():
         for batch in chunked(localities, 1000):
             try:

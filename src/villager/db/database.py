@@ -108,9 +108,9 @@ class Database:
         """Vacuum database"""
         self.execute("VACUUM")
 
-    def analyze(self) -> None:
+    def analyze(self) -> sqlite3.Cursor:
         """Analyze database for query optimization"""
-        self.execute("ANALYZE")
+        return self.execute("ANALYZE")
 
 
 db = Database("src/villager/db/villager.db")

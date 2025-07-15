@@ -25,7 +25,6 @@ class CountryModel(Model[Country]):
 
     id = AutoField()
     name = CharField(index=True, nullable=False)
-    normalized_name = CharField(index=True, nullable=False)
     alpha2 = CharField(unique=True, index=True)
     alpha3 = CharField(unique=True, index=True)
     numeric = IntegerField(unique=True)
@@ -38,7 +37,6 @@ class CountryModel(Model[Country]):
         alpha3 = raw_data["country_code_alpha3"]
         base = {
             "name": raw_data["name_short"],
-            "normalized_name": norm_name,
             "alpha2": alpha2,
             "alpha3": alpha3,
             "numeric": int(raw_data["numeric_code"]),

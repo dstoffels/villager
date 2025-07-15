@@ -17,7 +17,6 @@ class SubdivisionModel(Model[Subdivision]):
     query_select = """SELECT
                     s.id as id,
                     s.name as name,
-                    s.normalized_name as normalized_name,
                     s.iso_code as iso_code,
                     s.alt_name as alt_name,
                     s.code as code,
@@ -49,7 +48,6 @@ class SubdivisionModel(Model[Subdivision]):
 
     id = AutoField()
     name = CharField(index=True, nullable=False)
-    normalized_name = CharField(index=True, nullable=False)
     iso_code = CharField(unique=True)
     alt_name = CharField(index=True, nullable=True)
     code = CharField()
@@ -60,7 +58,7 @@ class SubdivisionModel(Model[Subdivision]):
 
     @classmethod
     def parse_raw(cls, raw_data):
-        country_id, country, _, c_norm_name = CountryModel.get(
+        country_id, country, _ = CountryModel.get(
             CountryModel.alpha2 == raw_data["#country_code_alpha2"]
         )
 
@@ -70,7 +68,6 @@ class SubdivisionModel(Model[Subdivision]):
 
         base = {
             "name": name,
-            "normalized_name": norm_name,
             "iso_code": iso_code,
             "code": iso_code.split("-")[-1] if "-" in iso_code else iso_code,
             "category": raw_data.get("category", None),
@@ -81,7 +78,7 @@ class SubdivisionModel(Model[Subdivision]):
 
         fts = {
             "name": norm_name,
-            "country": c_norm_name,
+            "country": normalize(country.name),
             "country_alpha2": normalize(country.alpha2),
             "country_alpha3": normalize(country.alpha3),
         }

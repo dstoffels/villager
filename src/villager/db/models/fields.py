@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Literal
+from villager.utils import normalize
 
 
 class Expression:

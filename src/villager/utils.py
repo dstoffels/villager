@@ -38,7 +38,7 @@ def normalize_name(name: str) -> str:
     if not name:
         return ""
 
-    disallowed_pattern = re.compile(r"[^a-zA-Z\u00C0-\u00FF\u0100-\u017F]")
+    disallowed_pattern = re.compile(r"[^a-zA-Z0-9\u00C0-\u00FF\u0100-\u017F\s\'\-]")
 
     if disallowed_pattern.search(name):
         return ""

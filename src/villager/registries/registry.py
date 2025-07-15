@@ -17,6 +17,7 @@ class Registry(Generic[TModel, TDTO], ABC):
         self._model_cls: Type[TModel] = model_cls
         self._count: int | None = None
         self._cache: list[TDTO] = None
+        self._order_by: str = ""
 
     def __iter__(self) -> Iterator[TDTO]:
         return iter(self.cache)
@@ -53,19 +54,20 @@ class Registry(Generic[TModel, TDTO], ABC):
 
         norm_query = normalize(query)
         tokens = norm_query.split()
-        min_len = len(tokens) * 2
+        min_len = len(tokens)
         total_tok_len = sum(len(t) for t in tokens)
 
         # exact match on initial query unless overridden
-        candidates = self._model_cls.fts_match(norm_query, limit, exact=True)
+        candidates = self._model_cls.fts_match(
+            norm_query, exact=True, order_by=self._order_by
+        )
 
         matches: dict[int, tuple[TDTO, float]] = {}
         found_exact_match = False
 
-        MAX_ITERATIONS = 100
+        MAX_ITERATIONS = 30
 
         for step in range(MAX_ITERATIONS):
-
             results = process.extract(
                 norm_query,
                 choices=[c.tokens for c in candidates],
@@ -95,11 +97,14 @@ class Registry(Generic[TModel, TDTO], ABC):
                 total_tok_len += new_len
             fts_q = " ".join(new_tokens)
 
-            candidates = self._model_cls.fts_match(fts_q)
+            candidates = self._model_cls.fts_match(fts_q, order_by=self._order_by)
 
+        return self._sort_matches(matches.values(), limit)
+
+    def _sort_matches(
+        self, matches: list[tuple[TDTO, float]], limit: int
+    ) -> list[TDTO]:
         return [
             dto
-            for dto, score in sorted(
-                matches.values(), key=lambda r: r[1], reverse=True
-            )[:limit]
+            for dto, score in sorted(matches, key=lambda r: r[1], reverse=True)[:limit]
         ]

@@ -5,7 +5,11 @@ from villager.literals import CountryCode, CountryName
 
 
 class LocalityRegistry(Registry[LocalityModel, Locality]):
-    """Registry for localities."""
+    """Registry for localities containing"""
+
+    def __init__(self, model_cls):
+        super().__init__(model_cls)
+        self._order_by = ", population DESC"
 
     osm_type_map = {
         "way": "w",
@@ -14,7 +18,7 @@ class LocalityRegistry(Registry[LocalityModel, Locality]):
     }
 
     def get(self, identifier: str) -> Locality:
-        '''Fetch a locality by exact OSM type & id. Format: "[type]:[id]"'''
+        '''Fetch a locality by exact OSM type & id. Required format: "[type]:[id]"'''
         if not identifier:
             return None
 
@@ -27,12 +31,32 @@ class LocalityRegistry(Registry[LocalityModel, Locality]):
         )
         return row.dto
 
-    def lookup(self, name: str, **kwargs) -> list[Locality]:
-        """Lookup localities by exact name."""
+    def lookup(
+        self,
+        name: str,
+        country: CountryCode | CountryName = None,
+        subdivision: str = None,
+        **kwargs,
+    ) -> list[Locality]:
+        """Lookup localities by exact name, optionally filtered by country and/or subdivision."""
         if not name:
             return []
 
-        name = normalize(name)
+        norm_q = normalize(name)
+        if country:
+            norm_q += f" {country}"
+        if subdivision:
+            norm_q += f" {subdivision}"
 
-        rows = self._model_cls.select(LocalityModel.normalized_name == name)
+        rows = self._model_cls.fts_match(norm_q, exact=True)
         return [r.dto for r in rows]
+
+    def _sort_matches(
+        self, matches: list[tuple[Locality, float]], limit: int
+    ) -> list[Locality]:
+        return [
+            dto
+            for dto, score in sorted(
+                matches, key=lambda r: (r[1], r[0].population or 0), reverse=True
+            )[:limit]
+        ]

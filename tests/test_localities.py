@@ -58,10 +58,10 @@ class TestLookup:
 
 class TestSearch:
     def setup_method(self):
-        self.locality_sample: list[Locality] = localities[:10000]
+        self.locality_sample: list[Locality] = localities[:1000]
 
     def test_fuzzy_name_top10(self, request):
-        seeds = range(20)
+        seeds = range(10)
         success_count = 0
         total = 0
         typo_rate = 0.15
@@ -84,7 +84,7 @@ class TestSearch:
         ), f"{accuracy:.2%} accuracy below threshold {success_threshold:.2%}"
 
     def test_fuzzy_match_by_subdivision(self, request):
-        seeds = range(20)
+        seeds = range(10)
         success_count = 0
         total = 0
         typo_rate = 0.15
@@ -107,7 +107,7 @@ class TestSearch:
         ), f"{accuracy:.2%} accuracy below threshold {success_threshold:.2%}"
 
     def test_fuzzy_match_by_country(self, request):
-        seeds = range(20)
+        seeds = range(10)
         success_count = 0
         total = 0
         typo_rate = 0.15

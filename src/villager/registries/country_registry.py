@@ -38,7 +38,7 @@ class CountryRegistry(Registry[CountryModel, Country]):
         identifier = self.ALIASES.get(identifier.lower(), identifier)
         identifier = normalize(identifier)
 
-        rows = self._model_cls.select(CountryModel.normalized_name == identifier)
+        rows = self._model_cls.fts_match(identifier, exact=True)
         return [r.dto for r in rows]
 
     @property

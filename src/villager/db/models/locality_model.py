@@ -20,11 +20,12 @@ class LocalityModel(Model[Locality]):
     fts_fields = [
         "name",
         "subdivision",
-        "sub_iso_code",
         "country",
         "country_alpha2",
         "country_alpha3",
+        "population",
     ]
+
     query_select = """SELECT 
                     l.*, 
 
@@ -45,14 +46,12 @@ class LocalityModel(Model[Locality]):
 
                     matched.name as fts_name,
                     matched.subdivision as fts_subdivision,
-                    matched.sub_iso_code as fts_sub_iso_code,
                     matched.country as fts_country,
                     matched.country_alpha2 as fts_country_alpha2,
                     matched.country_alpha3 as fts_country_alpha3,
 
                     matched.name || ' ' || 
                     matched.subdivision || ' ' || 
-                    matched.sub_iso_code || ' ' ||
                     matched.country || ' ' || 
                     matched.country_alpha2 || ' ' || 
                     matched.country_alpha3 
@@ -68,8 +67,7 @@ class LocalityModel(Model[Locality]):
 
     id = AutoField()
     name = CharField(index=True, nullable=False)
-    normalized_name = CharField(index=True, nullable=False)
-    classification = CharField()
+    type = CharField()
     population = IntegerField(nullable=True)
     lat = FloatField()
     lng = FloatField()
@@ -111,18 +109,16 @@ class LocalityModel(Model[Locality]):
         sub_data = SubdivisionModel.get(SubdivisionModel.iso_code == sub_iso_code)
         if not sub_data:
             return None, None
-        subdivision_id, subdivision, _, sub_norm_name = sub_data
+        subdivision_id, subdivision, _ = sub_data
 
         # Country
-        country_id, country, _, c_norm_name = CountryModel.get(
-            CountryModel.alpha2 == country_alpha2
-        )
+        country_id, country, _ = CountryModel.get(CountryModel.alpha2 == country_alpha2)
+        population = raw_data.get("population", None)
 
         base = {
             "name": name,
-            "normalized_name": norm_name,
-            "classification": raw_data["classification"],
-            "population": raw_data.get("population", None),
+            "type": raw_data["type"],
+            "population": population,
             "lat": lat,
             "lng": lng,
             "osm_id": osm_id,
@@ -133,11 +129,11 @@ class LocalityModel(Model[Locality]):
 
         fts = {
             "name": norm_name,
-            "subdivision": sub_norm_name,
-            "sub_iso_code": sub_iso_code,
-            "country": c_norm_name,
+            "subdivision": normalize(subdivision.name),
+            "country": normalize(country.name),
             "country_alpha2": normalize(country_alpha2),
             "country_alpha3": normalize(country.alpha3),
+            "population": population or 0,
         }
 
         return base, fts
@@ -147,7 +143,6 @@ class LocalityModel(Model[Locality]):
         data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
         id = row["id"]
         tokens = row["tokens"]
-        normalized_name = row["normalized_name"]
 
         subdivisions = []
         if row["sub1_name"]:
@@ -173,5 +168,7 @@ class LocalityModel(Model[Locality]):
             )
         data["villager_id"] = f'{row["osm_type"]}:{row["osm_id"]}'
         data["subdivisions"] = subdivisions
-        data["display_name"] = f'{row["name"]}, {row['sub1_name']}, {row["country"]}'
-        return RowData(id, cls.dto_class(**data), tokens, normalized_name)
+        data["display_name"] = (
+            f'{row["name"]}, {row['sub1_name']}, {f'{row["sub2_name"]}, ' if row['sub2_name'] else ""}{row["country"]}'
+        )
+        return RowData(id, cls.dto_class(**data), tokens)

@@ -55,7 +55,7 @@ class Locality(DTO):
     villager_id: str
     name: str
     display_name: str | None
-    classification: str | None
+    type: str | None
     population: int | None
     lat: float
     lng: float
