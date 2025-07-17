@@ -1,9 +1,7 @@
 from .model import (
     Model,
-    AutoField,
     CharField,
     IntegerField,
-    ForeignKeyField,
     FloatField,
     RowData,
 )
@@ -17,67 +15,24 @@ import sqlite3
 class LocalityModel(Model[Locality]):
     table_name = "localities"
     dto_class = Locality
-    fts_fields = [
-        "name",
-        "subdivision",
-        "country",
-        "country_alpha2",
-        "country_alpha3",
-        "population",
-    ]
 
-    query_select = """SELECT 
-                    l.*, 
-
-                    c.name as country, 
-                    c.alpha2 as country_alpha2, 
-                    c.alpha3 as country_alpha3,
-
-                    s1.name as sub1_name, 
-                    s1.iso_code as sub1_iso_code, 
-                    s1.code as sub1_code, 
-                    s1.category as sub1_category, 
-                    s1.admin_level as sub1_admin_level,
-                    s2.name as sub2_name, 
-                    s2.iso_code as sub2_iso_code, 
-                    s2.code as sub2_code, 
-                    s2.category as sub2_category, 
-                    s2.admin_level as sub2_admin_level,
-
-                    matched.name as fts_name,
-                    matched.subdivision as fts_subdivision,
-                    matched.country as fts_country,
-                    matched.country_alpha2 as fts_country_alpha2,
-                    matched.country_alpha3 as fts_country_alpha3,
-
-                    matched.name || ' ' || 
-                    matched.subdivision || ' ' || 
-                    matched.country || ' ' || 
-                    matched.country_alpha2 || ' ' || 
-                    matched.country_alpha3 
-                    as tokens
-                """
-    query_tables = [
-        "FROM localities_fts matched",
-        "JOIN localities l ON l.id = matched.rowid",
-        "JOIN subdivisions s1 ON l.subdivision_id = s1.id",
-        "JOIN countries c ON l.country_id = c.id",
-        "LEFT JOIN subdivisions s2 ON s1.parent_iso_code = s2.iso_code",
-    ]
-
-    id = AutoField()
-    name = CharField(index=True, nullable=False)
-    type = CharField()
-    population = IntegerField(nullable=True)
-    lat = FloatField()
-    lng = FloatField()
-    osm_id = IntegerField(index=True)
-    osm_type = CharField(index=True)
-    subdivision_id = ForeignKeyField(references="subdivisions")
-    country_id = ForeignKeyField(references="countries")
+    name = CharField()
+    population = IntegerField(index=False)
+    lat = FloatField(index=False)
+    lng = FloatField(index=False)
+    country = CharField()
+    country_alpha2 = CharField()
+    country_alpha3 = CharField()
+    subdivisions = CharField()
 
     @classmethod
-    def parse_raw(cls, raw_data) -> tuple[dict | None, dict | None]:
+    def parse_raw(cls, raw_data) -> dict | None:
+        type = raw_data.get("type")
+        population = raw_data.get("population") or None
+
+        if type == "village" and population is None:
+            return None
+
         # OSM
         osm_id = raw_data.get("osm_id")
         osm_type = raw_data.get("osm_type")
@@ -92,83 +47,107 @@ class LocalityModel(Model[Locality]):
             raw_data.get("name", None), raw_data.get("other_names", {})
         )
         if not name:
-            return None, None
-        norm_name = normalize(name)
+            return None
 
         # Address Data
         address: dict = raw_data.get("address", {})
         if not address:
-            return None, None
+            return None
 
         country_alpha2 = address.get("country_code")
 
         lng, lat = raw_data.get("location", (None, None))
 
-        # Subdivision
-        sub_iso_code = extract_iso_code(address)
-        sub_data = SubdivisionModel.get(SubdivisionModel.iso_code == sub_iso_code)
-        if not sub_data:
-            return None, None
-        subdivision_id, subdivision, _ = sub_data
-
         # Country
-        country_id, country, _ = CountryModel.get(CountryModel.alpha2 == country_alpha2)
-        population = raw_data.get("population", None)
+        country = CountryModel.get(CountryModel.alpha2 == country_alpha2)
+        if not country:
+            return None
 
-        base = {
+        # Subdivisions
+
+        def get_subdivisions(
+            iso_code: str, subdivisions: list[SubdivisionBasic] = []
+        ) -> list[SubdivisionBasic]:
+            if not iso_code:
+                return subdivisions
+
+            sub = SubdivisionModel.get_by_iso_code(iso_code)
+            if not sub:
+                return subdivisions
+
+            subdivisions.append(sub)
+            return get_subdivisions(sub.parent_iso_code, subdivisions)
+
+        sub_iso_code = extract_iso_code(address)
+        subdivisions = get_subdivisions(sub_iso_code)
+        if not subdivisions:
+            return None
+
+        subdivisions = " ".join(
+            [f"{s.name} {s.code} {s.admin_level}" for s in subdivisions]
+        )
+
+        return {
             "name": name,
-            "type": raw_data["type"],
             "population": population,
             "lat": lat,
             "lng": lng,
-            "osm_id": osm_id,
-            "osm_type": osm_type,
-            "country_id": country_id,
-            "subdivision_id": subdivision_id,
+            "country": country.name,
+            "country_alpha2": country.alpha2,
+            "country_alpha3": country.alpha3,
+            "subdivisions": subdivisions,
         }
-
-        fts = {
-            "name": norm_name,
-            "subdivision": normalize(subdivision.name),
-            "country": normalize(country.name),
-            "country_alpha2": normalize(country_alpha2),
-            "country_alpha3": normalize(country.alpha3),
-            "population": population or 0,
-        }
-
-        return base, fts
 
     @classmethod
-    def from_row(cls, row: sqlite3.Row) -> RowData[Locality]:
-        data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
-        id = row["id"]
-        tokens = row["tokens"]
-
+    def from_row(cls, row):
+        sub_fields = row["subdivisions"].split(" ")
         subdivisions = []
-        if row["sub1_name"]:
-            subdivisions.append(
-                SubdivisionBasic(
-                    name=row["sub1_name"],
-                    iso_code=row["sub1_iso_code"],
-                    code=row["sub1_code"],
-                    category=row["sub1_category"],
-                    admin_level=row["sub1_admin_level"],
-                )
-            )
 
-        if row["sub2_name"]:
-            subdivisions.append(
-                SubdivisionBasic(
-                    name=row["sub2_name"],
-                    iso_code=row["sub2_iso_code"],
-                    code=row["sub2_code"],
-                    category=row["sub2_category"],
-                    admin_level=row["sub2_admin_level"],
+        for i, field in enumerate(sub_fields):
+            if i % 3 == 0:
+                subdivisions.append(
+                    SubdivisionBasic(
+                        name=field,
+                        code=sub_fields[i + 1],
+                        admin_level=sub_fields[i + 2],
+                    )
                 )
-            )
-        data["villager_id"] = f'{row["osm_type"]}:{row["osm_id"]}'
-        data["subdivisions"] = subdivisions
-        data["display_name"] = (
-            f'{row["name"]}, {row['sub1_name']}, {f'{row["sub2_name"]}, ' if row['sub2_name'] else ""}{row["country"]}'
-        )
-        return RowData(id, cls.dto_class(**data), tokens)
+
+        row["subdivisions"] = subdivisions
+
+        return super().from_row(row)
+
+    # @classmethod
+    # def from_row(cls, row: sqlite3.Row) -> RowData[Locality]:
+    #     data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
+    #     id = row["id"]
+    #     tokens = row["tokens"]
+
+    #     subdivisions = []
+    #     if row["sub1_name"]:
+    #         subdivisions.append(
+    #             SubdivisionBasic(
+    #                 name=row["sub1_name"],
+    #                 iso_code=row["sub1_iso_code"],
+    #                 code=row["sub1_code"],
+    #                 category=row["sub1_category"],
+    #                 admin_level=row["sub1_admin_level"],
+    #             )
+    #         )
+
+    #     if row["sub2_name"]:
+    #         subdivisions.append(
+    #             SubdivisionBasic(
+    #                 name=row["sub2_name"],
+    #                 iso_code=row["sub2_iso_code"],
+    #                 code=row["sub2_code"],
+    #                 category=row["sub2_category"],
+    #                 admin_level=row["sub2_admin_level"],
+    #             )
+    #         )
+    #     data["villager_id"] = f'{row["osm_type"]}:{row["osm_id"]}'
+    #     data["subdivisions"] = subdivisions
+    #     data["display_name"] = (
+    #         f'{row["name"]}, {row['sub1_name']}, {f'{row["sub2_name"]}, ' if row['sub2_name'] else ""}{row["country"]}'
+    #     )
+    #     return RowData(id, cls.dto_class(**data), tokens)

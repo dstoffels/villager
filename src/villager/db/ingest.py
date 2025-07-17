@@ -25,42 +25,68 @@ def chunked(list: list, size: int):
 
 
 def ingest_countries() -> None:
-    parsed: list[tuple[dict, dict]] = []
+    countries: dict[str, dict] = {}
 
     with open(DATA_DIR / "countries.csv", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
 
         for line in reader:
-            parsed.append(CountryModel.parse_raw(line))
+            country_dict = CountryModel.parse_raw(line)
+            k = country_dict["alpha2"]
+            if k not in countries:
+                countries[k] = country_dict
 
     with db.atomic():
-        for batch in chunked(parsed, 100):
+        for batch in chunked(list(countries.values()), 100):
             try:
-                data, fts = zip(*batch)
-                CountryModel.insert_many(data, fts)
+                CountryModel.insert_many(batch)
             except Exception as e:
                 print(f"Unexpected error on batch: {e}")
                 raise e
 
 
 def ingest_subdivisions() -> None:
-    subdivisions: list[tuple[dict, dict]] = []
-    seen = set()
+    subdivisions: dict[str, dict] = {}
 
     with open(DATA_DIR / "subdivisions.csv", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for line in reader:
-            data, fts = SubdivisionModel.parse_raw(line)
-            if data.get("iso_code") in seen:
-                continue
-            seen.add(data.get("iso_code"))
-            subdivisions.append((data, fts))
+            data = SubdivisionModel.parse_raw(line)
+            a2 = data.get("country_alpha2")
+            code = data.get("code")
+            iso_code = f"{a2}-{code}"
+            if iso_code not in subdivisions:
+                subdivisions[iso_code] = data
+
+        # assign admin levels
+        def get_admin_level(
+            iso_code: str, subdivisions: dict[str, dict], cache: dict[str, int]
+        ) -> int:
+            if iso_code in cache:
+                return cache[iso_code]
+
+            sub = subdivisions.get(iso_code)
+            if not sub:
+                return 1
+
+            parent_code = sub.get("parent_iso_code")
+            if not parent_code or parent_code == iso_code:
+                cache[iso_code] = 1
+                return 1
+
+            level = get_admin_level(parent_code, subdivisions, cache) + 1
+            cache[iso_code] = level
+            return level
+
+        admin_level_cache = {}
+
+        for k, sub in subdivisions.items():
+            sub["admin_level"] = get_admin_level(k, subdivisions, admin_level_cache)
 
     with db.atomic():
-        for batch in chunked(subdivisions, 100):
+        for batch in chunked(list(subdivisions.values()), 100):
             try:
-                data, fts = zip(*batch)
-                SubdivisionModel.insert_many(data, fts)
+                SubdivisionModel.insert_many(batch)
             except Exception as e:
                 print(f"Unexpected error on batch: {e}")
                 raise e
@@ -69,14 +95,12 @@ def ingest_subdivisions() -> None:
 def ingest_localities() -> None:
     locality_dir = DATA_DIR / "localities"
 
-    localities: list[tuple[dict, dict]] = []
-    seen = set()
-    # types = set()
+    localities: dict[str, dict] = {}
+
     valid_types = {
         "city",
         "town",
         "village",
-        # "hamlet",
         "administrative",
     }
 
@@ -92,23 +116,22 @@ def ingest_localities() -> None:
                 for line in f:
                     try:
                         data: dict = json.loads(line)
+
                         type_ = data.get("type")
                         if type_ not in valid_types:
                             continue
 
                         data["type"] = type_
 
-                        data, fts = LocalityModel.parse_raw(data)
+                        data = LocalityModel.parse_raw(data)
 
-                        if data and fts:
+                        if data:
                             hash = hashlib.sha256(
-                                f"{data.get('name').strip().lower()}{data.get('subdivision_id')}".encode()
+                                f"{data.get('name').strip().lower()}{data.get('subdivisions')}".encode()
                             ).hexdigest()
-                            if hash in seen:
-                                continue
-                            seen.add(hash)
 
-                            localities.append((data, fts))
+                            if hash not in localities:
+                                localities[hash] = data
 
                     except json.JSONDecodeError as e:
                         print(f"Error Decoding JSON: {e}")
@@ -116,12 +139,11 @@ def ingest_localities() -> None:
                     except Exception as e:
                         print(f"Unexpected error on line: {line}")
                         raise e
-    # print(types)
+
     with db.atomic():
-        for batch in chunked(localities, 1000):
+        for batch in chunked(list(localities.values()), 1000):
             try:
-                data, fts = zip(*batch)
-                LocalityModel.insert_many(data, fts)
+                LocalityModel.insert_many(batch)
             except Exception as e:
                 print(f"Unexpected error on batch: {e}")
                 raise e

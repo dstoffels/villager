@@ -13,74 +13,51 @@ from villager.utils import normalize, tokenize
 class SubdivisionModel(Model[Subdivision]):
     table_name = "subdivisions"
     dto_class = Subdivision
-    fts_fields = ["name", "country", "country_alpha2", "country_alpha3"]
-    query_select = """SELECT
-                    s.id as id,
-                    s.name as name,
-                    s.iso_code as iso_code,
-                    s.alt_name as alt_name,
-                    s.code as code,
-                    s.category as category,
-                    s.parent_iso_code as parent_iso_code,
-                    s.admin_level as admin_level,
 
-                    c.name as country,
-                    c.alpha2 as country_alpha2,
-                    c.alpha3 as country_alpha3,
-
-                    matched.name as fts_name,
-                    matched.country as fts_country,
-                    matched.country_alpha2 as fts_country_alpha2,
-                    matched.country_alpha3 as fts_country_alpha3,
-                    
-                    matched.name || ' ' || 
-                    matched.country || ' ' || 
-                    matched.country_alpha2 || ' ' ||
-                    matched.country_alpha3
-                    as tokens
-                    """
-
-    query_tables = [
-        "FROM subdivisions_fts matched",
-        "JOIN subdivisions s ON matched.rowid = s.id",
-        "JOIN countries c ON s.country_id = c.id",
-    ]
-
-    id = AutoField()
-    name = CharField(index=True, nullable=False)
-    iso_code = CharField(unique=True)
-    alt_name = CharField(index=True, nullable=True)
+    name = CharField()
+    alt_name = CharField()
     code = CharField()
-    category = CharField(index=True, nullable=True)
-    parent_iso_code = CharField(index=True, nullable=True)
+    category = CharField()
+    parent_iso_code = CharField()
     admin_level = IntegerField(default=1)
-    country_id: CountryModel = ForeignKeyField(references="countries")
+    country = CharField()
+    country_alpha2 = CharField()
+    country_alpha3 = CharField()
 
     @classmethod
     def parse_raw(cls, raw_data):
-        country_id, country, _ = CountryModel.get(
+        country = CountryModel.get(
             CountryModel.alpha2 == raw_data["#country_code_alpha2"]
         )
 
-        iso_code = raw_data["subdivision_code_iso3166-2"]
+        iso_code: str = raw_data["subdivision_code_iso3166-2"]
+
         name = raw_data["subdivision_name"]
-        norm_name = normalize(name)
 
-        base = {
+        return {
             "name": name,
-            "iso_code": iso_code,
-            "code": iso_code.split("-")[-1] if "-" in iso_code else iso_code,
-            "category": raw_data.get("category", None),
-            "country_id": country_id,
-            "alt_name": raw_data.get("localVariant", None),
-            "parent_iso_code": raw_data.get("parent_subdivision"),
+            "code": iso_code.split("-")[-1],
+            "category": raw_data.get("category") or None,
+            "alt_name": raw_data.get("localVariant") or None,
+            "parent_iso_code": raw_data.get("parent_subdivision") or None,
+            "admin_level": 1,
+            "country": country.name,
+            "country_alpha2": country.alpha2,
+            "country_alpha3": country.alpha3,
         }
 
-        fts = {
-            "name": norm_name,
-            "country": normalize(country.name),
-            "country_alpha2": normalize(country.alpha2),
-            "country_alpha3": normalize(country.alpha3),
-        }
+    @classmethod
+    def from_row(cls, row):
+        row = dict(row)
 
-        return base, fts
+        row["iso_code"] = f'{row["country_alpha2"]}-{row["code"]}'
+
+        return super().from_row(row)
+    
+    @classmethod
+    def get_by_iso_code(cls, iso_code: str) -> Subdivision:
+        alpha2, *code = tuple(iso_code.split("-"))
+        code = "-".join([*code])
+        return cls.get(
+            (cls.country_alpha2 == alpha2) & (cls.code == code)
+        )

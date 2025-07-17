@@ -65,7 +65,7 @@ class Registry(Generic[TModel, TDTO], ABC):
         matches: dict[int, tuple[TDTO, float]] = {}
         found_exact_match = False
 
-        MAX_ITERATIONS = 30
+        MAX_ITERATIONS = 20
 
         for step in range(MAX_ITERATIONS):
             results = process.extract(

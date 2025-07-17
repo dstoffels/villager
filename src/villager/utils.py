@@ -30,7 +30,7 @@ def tokenize(*parts: str) -> str:
 def extract_iso_code(address: dict) -> str | None:
     for key, value in address.items():
         if re.match(r"ISO3166-2-lvl\d+$", key):
-            return value
+            return value.replace(".", "-")
     return None
 
 

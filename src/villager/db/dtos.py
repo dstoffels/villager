@@ -17,21 +17,27 @@ class DTO(ABC):
 
 @dataclass
 class Country(DTO):
+    id: int
     name: str
     alpha2: str
     alpha3: str
-    numeric: str
     long_name: str
+
+    @property
+    def search_tokens(self):
+        return f"{self.name} {self.alpha2} {self.alpha3} {self.long_name}"
 
 
 @dataclass
 class Subdivision(DTO):
     """A country subdivision such as a state, province, or territory."""
 
+    id: int
     name: str
     iso_code: str
     code: str
     category: str
+    parent_iso_code: str
     admin_level: int
     alt_name: str
     country: str
@@ -42,9 +48,7 @@ class Subdivision(DTO):
 @dataclass
 class SubdivisionBasic(DTO):
     name: str
-    iso_code: str
     code: str
-    category: str
     admin_level: int
 
 
@@ -52,15 +56,13 @@ class SubdivisionBasic(DTO):
 class Locality(DTO):
     """A geographic locality such as a city, town, village, or hamlet."""
 
-    villager_id: str
+    id: int
     name: str
     display_name: str | None
     type: str | None
     population: int | None
     lat: float
     lng: float
-    osm_id: int
-    osm_type: str
     country: str
     country_alpha2: str
     country_alpha3: str

@@ -90,17 +90,20 @@ class Database:
 
     def create_fts_table(
         self,
-        fts_table: str,
+        table_name: str,
         columns: List[str],
     ) -> None:
         """Create FTS5 virtual table"""
-        columns_str = ", ".join([f'"{c}"' for c in columns])
+        columns_str = ", ".join(columns)
 
-        fts_options = ['tokenize="unicode61"', 'prefix="2 3"']
+        fts_options = [
+            '''tokenize="unicode61 remove_diacritics 2 tokenchars '-'"''',
+            'prefix="2 3"',
+        ]
 
         options_str = ", " + ", ".join(fts_options) if fts_options else ""
 
-        query = f"""CREATE VIRTUAL TABLE IF NOT EXISTS "{fts_table}" USING fts5({columns_str}{options_str})"""
+        query = f"""CREATE VIRTUAL TABLE IF NOT EXISTS "{table_name}" USING fts5({columns_str}{options_str})"""
         self.execute(query)
         self._conn.commit()
 

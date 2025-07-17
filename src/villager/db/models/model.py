@@ -22,13 +22,13 @@ from ...utils import (
     parse_other_names,
 )
 
-T = TypeVar("T")
+TDTO = TypeVar("TDTO")
 
 
 @dataclass
-class RowData(Generic[T]):
+class RowData(Generic[TDTO]):
     id: int
-    dto: T
+    dto: TDTO
     tokens: str
 
     def __iter__(self):
@@ -37,38 +37,22 @@ class RowData(Generic[T]):
         yield self.tokens
 
 
-class Model(Generic[T], ABC):
+class Model(Generic[TDTO], ABC):
     table_name: str = ""
-    dto_class: Type[T] = None
-    fts_fields: list[str] = []
+    dto_class: Type[TDTO] = None
     query_select: str = ""
     query_tables: str = ""
 
     @classmethod
-    def from_row(cls, row: sqlite3.Row) -> RowData[T]:
+    def from_row(cls, row: sqlite3.Row) -> TDTO:
         if not row:
             return None
 
         data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
-        id = row["id"]
-        tokens = row["tokens"]
-        return RowData(id, cls.dto_class(**data), tokens)
+        return cls.dto_class(**data)
 
     @classmethod
     def create_table(cls) -> None:
-        fields = []
-        indexes = []
-
-        for name, attr in cls.__dict__.items():
-            if isinstance(attr, Field):
-                fields.append(attr.get_sql())
-                if attr.index:
-                    indexes.append(attr.get_idx(name, cls.table_name))
-
-        columns = ", ".join(fields)
-        db.create_table(cls.table_name, columns)
-        for index in indexes:
-            db.execute(index)
         cls._create_fts()
         db.commit()
 
@@ -77,8 +61,16 @@ class Model(Generic[T], ABC):
         return db.execute(f"SELECT COUNT(*) FROM {cls.table_name}").fetchone()[0]
 
     @classmethod
+    def columns(cls):
+        for name, attr in cls.__dict__.items():
+            if isinstance(attr, Field):
+                if not attr.index:
+                    name = f"{name} UNINDEXED"
+                yield name
+
+    @classmethod
     def _create_fts(cls) -> None:
-        db.create_fts_table(cls.table_name + "_fts", cls.fts_fields)
+        db.create_fts_table(cls.table_name, cls.columns())
 
     @classmethod
     @abstractmethod
@@ -86,22 +78,18 @@ class Model(Generic[T], ABC):
         pass
 
     @classmethod
-    def insert_many(cls, data: list[dict], fts_data: list[dict] = None) -> None:
+    def insert_many(cls, data: list[dict]) -> None:
+        """Insert multiple rows into the database, requires with atomic."""
         db.insert_many(cls.table_name, data)
-        if fts_data:
-            db.insert_many(cls.table_name + "_fts", fts_data)
 
     @classmethod
-    def get(cls, expr: Expression) -> RowData[T] | None:
-
+    def get(cls, expr: Expression) -> TDTO | None:
         row = db.execute(
-            f"{cls.query_select} {" ".join(cls.query_tables)} WHERE {expr.sql} LIMIT 1",
+            f"SELECT rowid as id, * FROM {cls.table_name} WHERE {expr.sql} LIMIT 1",
             expr.params,
         ).fetchone()
-
         if not row:
             return None
-
         return cls.from_row(row)
 
     @classmethod
@@ -110,25 +98,26 @@ class Model(Generic[T], ABC):
         expr: Expression | None = None,
         order_by: str | None = None,
         limit: int | None = None,
-    ) -> list[RowData[T]]:
+    ) -> list[TDTO]:
+
         order_by = f"ORDER BY {order_by}" if order_by else ""
         limit = f"LIMIT {limit}" if limit else ""
 
         if expr:
             rows = db.execute(
-                f"{cls.query_select} {" ".join(cls.query_tables)} WHERE {expr.sql} {order_by} {limit}",
+                f"SELECT * FROM {cls.table_name} WHERE {expr.sql} {order_by} {limit}",
                 expr.params,
             ).fetchall()
         else:
             rows = db.execute(
-                f"{cls.query_select} {" ".join(cls.query_tables)} {order_by} {limit}"
+                f"SELECT * FROM {cls.table_name} {order_by} {limit}"
             ).fetchall()
         return [cls.from_row(row) for row in rows]
 
     @classmethod
     def where(
         cls, sql: str, order_by: str | None = None, limit: int | None = None
-    ) -> list[RowData[T]]:
+    ) -> list[RowData[TDTO]]:
         order_by = f"ORDER BY {order_by}" if order_by else ""
         limit = f"LIMIT {limit}" if limit else ""
         rows = db.execute(
@@ -139,7 +128,7 @@ class Model(Generic[T], ABC):
     @classmethod
     def fts_match(
         cls, query: str, limit=100, order_by="", exact: bool = False
-    ) -> list[RowData[T]]:
+    ) -> list[RowData[TDTO]]:
         if not exact:
             tokens = query.split()
             query = " ".join([f"{t}*" for t in tokens])
