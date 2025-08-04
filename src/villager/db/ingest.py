@@ -1,4 +1,4 @@
-from villager.db import db, CountryModel, SubdivisionModel, LocalityModel
+from villager.db import db, CountryModel, SubdivisionModel, CityModel
 import csv
 from pathlib import Path
 import hashlib
@@ -8,7 +8,7 @@ import os
 
 
 def run() -> None:
-    db.create_tables([CountryModel, SubdivisionModel, LocalityModel])
+    db.create_tables([CountryModel, SubdivisionModel, CityModel])
     ingest_countries()
     ingest_subdivisions()
     ingest_localities()
@@ -123,7 +123,7 @@ def ingest_localities() -> None:
 
                         data["type"] = type_
 
-                        data = LocalityModel.parse_raw(data)
+                        data = CityModel.parse_raw(data)
 
                         if data:
                             hash = hashlib.sha256(
@@ -143,7 +143,7 @@ def ingest_localities() -> None:
     with db.atomic():
         for batch in chunked(list(localities.values()), 1000):
             try:
-                LocalityModel.insert_many(batch)
+                CityModel.insert_many(batch)
             except Exception as e:
                 print(f"Unexpected error on batch: {e}")
                 raise e

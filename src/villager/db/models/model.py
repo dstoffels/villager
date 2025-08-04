@@ -1,6 +1,6 @@
 from ..database import db
 from abc import abstractmethod
-from ..dtos import Country, Subdivision, SubdivisionBasic, Locality
+from ..dtos import Country, Subdivision, SubdivisionBasic, City
 from typing import TypeVar, Generic
 from abc import ABC
 import sqlite3

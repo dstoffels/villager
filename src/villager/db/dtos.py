@@ -29,6 +29,13 @@ class Country(DTO):
 
 
 @dataclass
+class SubdivisionBasic(DTO):
+    name: str
+    code: str
+    admin_level: int
+
+
+@dataclass
 class Subdivision(DTO):
     """A country subdivision such as a state, province, or territory."""
 
@@ -39,27 +46,20 @@ class Subdivision(DTO):
     category: str
     parent_iso_code: str
     admin_level: int
-    alt_name: str
+    aliases: list[str]
     country: str
     country_alpha2: str
     country_alpha3: str
+    subdivisions: list[SubdivisionBasic]
 
 
 @dataclass
-class SubdivisionBasic(DTO):
-    name: str
-    code: str
-    admin_level: int
-
-
-@dataclass
-class Locality(DTO):
-    """A geographic locality such as a city, town, village, or hamlet."""
+class City(DTO):
+    """A geographic locality such as a city, town, or village."""
 
     id: int
     name: str
     display_name: str | None
-    type: str | None
     population: int | None
     lat: float
     lng: float
@@ -67,3 +67,4 @@ class Locality(DTO):
     country_alpha2: str
     country_alpha3: str
     subdivisions: list[SubdivisionBasic]
+    alternate_names: list[str]

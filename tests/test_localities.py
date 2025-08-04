@@ -1,4 +1,4 @@
-from villager import localities, Locality
+from villager import localities, City
 from utils import mangle
 import pytest
 import time
@@ -14,12 +14,12 @@ def track_test_metrics(request):
 
 class TestGet:
     def setup_method(self):
-        self.locality_sample: list[Locality] = [l for l in localities]
+        self.locality_sample: list[City] = [l for l in localities]
 
     def test_id(self):
         for l in self.locality_sample[:1000]:
             locality = localities.get(l.villager_id)
-            assert isinstance(locality, Locality)
+            assert isinstance(locality, City)
             assert locality is not None
             assert l.name == locality.name
 
@@ -27,14 +27,14 @@ class TestGet:
         test = localities[0]
         locality = localities.get(f"way:{test.osm_id}")
 
-        assert isinstance(locality, Locality)
+        assert isinstance(locality, City)
         assert locality is not None
         assert test.name == locality.name
 
     def test_normalized(self):
         test = localities[0]
         locality = localities.get(f"   {test.villager_id.upper()}   ")
-        assert isinstance(locality, Locality)
+        assert isinstance(locality, City)
         assert locality is not None
         assert test.name == locality.name
 
@@ -58,7 +58,7 @@ class TestLookup:
 
 class TestSearch:
     def setup_method(self):
-        self.locality_sample: list[Locality] = localities[:1000]
+        self.locality_sample: list[City] = localities[:1000]
 
     def test_fuzzy_name_top10(self, request):
         seeds = range(10)

@@ -2,8 +2,8 @@ from .database import db
 from .models import (
     CountryModel,
     SubdivisionModel,
-    LocalityModel,
+    CityModel,
     Model,
     RowData,
 )
-from .dtos import DTO, Country, Subdivision, Locality
+from .dtos import DTO, Country, Subdivision, City
