@@ -72,10 +72,10 @@ class Model(Generic[TDTO], ABC):
     def _create_fts(cls) -> None:
         db.create_fts_table(cls.table_name, cls.columns())
 
-    @classmethod
-    @abstractmethod
-    def parse_raw(cls, raw_data: dict) -> str:
-        pass
+    # @classmethod
+    # @abstractmethod
+    # def parse_raw(cls, raw_data: dict) -> str:
+    #     pass
 
     @classmethod
     def insert_many(cls, data: list[dict]) -> None:

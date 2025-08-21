@@ -9,7 +9,7 @@ class CountryModel(Model[Country]):
     name = CharField()
     alpha2 = CharField()
     alpha3 = CharField()
-    long_name = CharField()
+    tokens = CharField()
 
     @classmethod
     def parse_raw(cls, raw_data):

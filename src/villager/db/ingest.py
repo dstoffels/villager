@@ -11,12 +11,12 @@ def run() -> None:
     db.create_tables([CountryModel, SubdivisionModel, CityModel])
     ingest_countries()
     ingest_subdivisions()
-    ingest_localities()
+    ingest_cities()
     db.vacuum()
     compress_db(db.db_path)
 
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
 
 
 def chunked(list: list, size: int):
@@ -24,17 +24,21 @@ def chunked(list: list, size: int):
         yield list[i : i + size]
 
 
+def clean_row(row: dict[str, str]) -> dict[str, str | None]:
+    return {k: (v if v.strip() != "" else None) for k, v in row.items()}
+
+
 def ingest_countries() -> None:
     countries: dict[str, dict] = {}
 
-    with open(DATA_DIR / "countries.csv", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+    with open(DATA_DIR / "countries/countries.tsv", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
 
         for line in reader:
-            country_dict = CountryModel.parse_raw(line)
-            k = country_dict["alpha2"]
+            line.pop("id")
+            k = line["alpha2"]
             if k not in countries:
-                countries[k] = country_dict
+                countries[k] = clean_row(line)
 
     with db.atomic():
         for batch in chunked(list(countries.values()), 100):
@@ -48,40 +52,15 @@ def ingest_countries() -> None:
 def ingest_subdivisions() -> None:
     subdivisions: dict[str, dict] = {}
 
-    with open(DATA_DIR / "subdivisions.csv", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+    with open(
+        DATA_DIR / "subdivisions/subdivisions.tsv", newline="", encoding="utf-8"
+    ) as f:
+        reader = csv.DictReader(f, delimiter="\t")
         for line in reader:
-            data = SubdivisionModel.parse_raw(line)
-            a2 = data.get("country_alpha2")
-            code = data.get("code")
-            iso_code = f"{a2}-{code}"
-            if iso_code not in subdivisions:
-                subdivisions[iso_code] = data
-
-        # assign admin levels
-        def get_admin_level(
-            iso_code: str, subdivisions: dict[str, dict], cache: dict[str, int]
-        ) -> int:
-            if iso_code in cache:
-                return cache[iso_code]
-
-            sub = subdivisions.get(iso_code)
-            if not sub:
-                return 1
-
-            parent_code = sub.get("parent_iso_code")
-            if not parent_code or parent_code == iso_code:
-                cache[iso_code] = 1
-                return 1
-
-            level = get_admin_level(parent_code, subdivisions, cache) + 1
-            cache[iso_code] = level
-            return level
-
-        admin_level_cache = {}
-
-        for k, sub in subdivisions.items():
-            sub["admin_level"] = get_admin_level(k, subdivisions, admin_level_cache)
+            line.pop("id")
+            k = line["code"]
+            if k not in subdivisions:
+                subdivisions[k] = clean_row(line)
 
     with db.atomic():
         for batch in chunked(list(subdivisions.values()), 100):
@@ -92,56 +71,17 @@ def ingest_subdivisions() -> None:
                 raise e
 
 
-def ingest_localities() -> None:
-    locality_dir = DATA_DIR / "localities"
-
-    localities: dict[str, dict] = {}
-
-    valid_types = {
-        "city",
-        "town",
-        "village",
-        "administrative",
-    }
-
-    for c_dir in locality_dir.iterdir():
-        if not c_dir.is_dir():
-            continue
-
-        for file in c_dir.iterdir():
-            if not file.is_file():
-                continue
-
-            with file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    try:
-                        data: dict = json.loads(line)
-
-                        type_ = data.get("type")
-                        if type_ not in valid_types:
-                            continue
-
-                        data["type"] = type_
-
-                        data = CityModel.parse_raw(data)
-
-                        if data:
-                            hash = hashlib.sha256(
-                                f"{data.get('name').strip().lower()}{data.get('subdivisions')}".encode()
-                            ).hexdigest()
-
-                            if hash not in localities:
-                                localities[hash] = data
-
-                    except json.JSONDecodeError as e:
-                        print(f"Error Decoding JSON: {e}")
-                        continue
-                    except Exception as e:
-                        print(f"Unexpected error on line: {line}")
-                        raise e
+def ingest_cities() -> None:
+    cities: list[dict] = []
+    with open(DATA_DIR / "cities/cities.tsv", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for line in reader:
+            line.pop("admin3")
+            line.pop("admin4")
+            cities.append(clean_row(line))
 
     with db.atomic():
-        for batch in chunked(list(localities.values()), 1000):
+        for batch in chunked(list(cities), 1000):
             try:
                 CityModel.insert_many(batch)
             except Exception as e:

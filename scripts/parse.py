@@ -3,7 +3,7 @@ import json
 from dataclasses import dataclass
 
 DIR = Path(__file__).parent
-dest = DIR / "cities.json"
+dest = DIR / "cities500.json"
 
 
 @dataclass

@@ -97,7 +97,7 @@ class Database:
         columns_str = ", ".join(columns)
 
         fts_options = [
-            '''tokenize="unicode61 remove_diacritics 2 tokenchars '-'"''',
+            '''tokenize = "unicode61 remove_diacritics 2"''',
             'prefix="2 3"',
         ]
 

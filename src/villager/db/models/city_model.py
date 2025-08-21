@@ -17,87 +17,13 @@ class CityModel(Model[City]):
     dto_class = City
 
     name = CharField()
-    population = IntegerField(index=False)
+    admin1 = CharField()
+    admin2 = CharField()
+    country = CharField()
+    tokens = CharField()
     lat = FloatField(index=False)
     lng = FloatField(index=False)
-    country = CharField()
-    country_alpha2 = CharField()
-    country_alpha3 = CharField()
-    subdivisions = CharField()
-    alt_names = CharField()
-
-    @classmethod
-    def parse_raw(cls, raw_data) -> dict | None:
-        type = raw_data.get("type")
-        population = raw_data.get("population") or None
-
-        if type == "village" and population is None:
-            return None
-
-        # OSM
-        osm_id = raw_data.get("osm_id")
-        osm_type = raw_data.get("osm_type")
-
-        if not osm_id or not osm_type:
-            return None, None
-
-        osm_type = osm_type[0]
-
-        # Name
-        name, other_names = parse_other_names(
-            raw_data.get("name", None), raw_data.get("other_names", {})
-        )
-        if not name:
-            return None
-
-        # Address Data
-        address: dict = raw_data.get("address", {})
-        if not address:
-            return None
-
-        country_alpha2 = address.get("country_code")
-
-        lng, lat = raw_data.get("location", (None, None))
-
-        # Country
-        country = CountryModel.get(CountryModel.alpha2 == country_alpha2)
-        if not country:
-            return None
-
-        # Subdivisions
-
-        def get_subdivisions(
-            iso_code: str, subdivisions: list[SubdivisionBasic] = []
-        ) -> list[SubdivisionBasic]:
-            if not iso_code:
-                return subdivisions
-
-            sub = SubdivisionModel.get_by_iso_code(iso_code)
-            if not sub:
-                return subdivisions
-
-            subdivisions.append(sub)
-            return get_subdivisions(sub.parent_iso_code, subdivisions)
-
-        sub_iso_code = extract_iso_code(address)
-        subdivisions = get_subdivisions(sub_iso_code)
-        if not subdivisions:
-            return None
-
-        subdivisions = " ".join(
-            [f"{s.name} {s.code} {s.admin_level}" for s in subdivisions]
-        )
-
-        return {
-            "name": name,
-            "population": population,
-            "lat": lat,
-            "lng": lng,
-            "country": country.name,
-            "country_alpha2": country.alpha2,
-            "country_alpha3": country.alpha3,
-            "subdivisions": subdivisions,
-        }
+    population = IntegerField(index=False)
 
     @classmethod
     def from_row(cls, row):

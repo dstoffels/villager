@@ -55,8 +55,6 @@ class Subdivision(DTO):
 
 @dataclass
 class City(DTO):
-    """A geographic locality such as a city, town, or village."""
-
     id: int
     name: str
     display_name: str | None

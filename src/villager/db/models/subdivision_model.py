@@ -17,24 +17,25 @@ class SubdivisionModel(Model[Subdivision]):
 
     name = CharField()
     code = CharField()
-    category = CharField()
-    parent_iso_code = CharField()
-    admin_level = IntegerField(default=1)
-    aliases = CharField()
+    iso_code = CharField()
+    category = CharField(index=False)
+    parent_code = CharField(index=False)
     country = CharField()
-    country_alpha2 = CharField()
-    country_alpha3 = CharField()
+    tokens = CharField()
+    # admin_level = IntegerField(default=1)
+    # country_alpha2 = CharField()
+    # country_alpha3 = CharField()
 
-    @classmethod
-    def parse_raw(cls, raw_data):
-        country = CountryModel.get(CountryModel.alpha2 == raw_data["country_alpha2"])
+    # @classmethod
+    # def parse_raw(cls, raw_data):
+    #     country = CountryModel.get(CountryModel.alpha2 == raw_data["country_alpha2"])
 
-        return {
-            **raw_data,
-            "country": country.name,
-            "country_alpha2": country.alpha2,
-            "country_alpha3": country.alpha3,
-        }
+    #     return {
+    #         **raw_data,
+    #         "country": country.name,
+    #         "country_alpha2": country.alpha2,
+    #         "country_alpha3": country.alpha3,
+    #     }
 
     @classmethod
     def from_row(cls, row):
@@ -42,9 +43,7 @@ class SubdivisionModel(Model[Subdivision]):
 
         row["iso_code"] = f'{row["country_alpha2"]}-{row["code"]}'
 
-        subs = SubdivisionModel.select(
-            SubdivisionModel.parent_iso_code == row["iso_code"]
-        )
+        subs = SubdivisionModel.select(SubdivisionModel.parent_code == row["iso_code"])
         row["subdivisions"] = []
         for s in subs:
             row["subdivisions"].append(

@@ -1,8 +1,5 @@
 import json
-import time
-import requests
 from pathlib import Path
-import csv
 from dataclasses import dataclass
 from rapidfuzz import fuzz
 import unicodedata
@@ -26,7 +23,7 @@ def parse_sub(line: str) -> sub_txt:
 def parse_raw() -> dict:
     subs_by_country = {}
     with open(BASE_PATH / "subdivisions_raw.json", "r", encoding="utf-8") as raw:
-        raw_data: dict = json.load(raw)
+        raw_data: dict[str, dict] = json.load(raw)
         print(len(raw_data))
         for k, s in raw_data.items():
             name = s.get("name") or s.get("subdivision_name")
@@ -80,6 +77,7 @@ def parse_geonames(subs_by_country: dict[str, dict], filename: str):
     unmatched = {}
     with open(BASE_PATH / filename, "r", newline="", encoding="utf-8") as f:
         count = 0
+        match_count = 0
         for line in f:
             count += 1
 
@@ -95,69 +93,51 @@ def parse_geonames(subs_by_country: dict[str, dict], filename: str):
 
             if geo_sub.code in submap:
                 matched[geo_sub.code] = submap[geo_sub.code]
+                match_count += 1
                 continue
 
             match_flag = False
-            for iso_code, sub in submap.items():
+            for iso_code, iso_sub in submap.items():
                 norm_name = unicodedata.normalize("NFKD", geo_sub.name)
                 norm_ascii_name = unicodedata.normalize("NFKD", geo_sub.name_ascii)
-                norm_subname = unicodedata.normalize("NFKD", sub["name"])
-                if fuzz.partial_token_ratio(norm_name, norm_subname) > MATCH_THRESHOLD:
-                    matched[geo_sub.code] = sub
+                norm_iso_sub_name = unicodedata.normalize("NFKD", iso_sub["name"])
+
+                if (
+                    fuzz.partial_token_ratio(norm_name, norm_iso_sub_name)
+                    > MATCH_THRESHOLD
+                ):
+                    matched[geo_sub.code] = iso_sub
                     match_flag = True
                     break
                 elif (
-                    fuzz.partial_token_ratio(norm_ascii_name, norm_subname)
+                    fuzz.partial_token_ratio(norm_ascii_name, norm_iso_sub_name)
                     > MATCH_THRESHOLD
                 ):
-                    matched[geo_sub.code] = sub
+                    matched[geo_sub.code] = iso_sub
                     match_flag = True
                     break
-                elif sub["aliases"]:
-                    for a in sub["aliases"].split("|"):
+                elif iso_sub["aliases"]:
+                    for a in iso_sub["aliases"].split("|"):
                         norm_alias = unicodedata.normalize("NFKD", a)
                         if (
                             fuzz.partial_token_ratio(norm_name, norm_alias)
                             > MATCH_THRESHOLD
                         ):
-                            matched[geo_sub.code] = sub
+                            matched[geo_sub.code] = iso_sub
                             match_flag = True
                             break
                         elif (
                             fuzz.partial_token_ratio(norm_ascii_name, norm_alias)
                             > MATCH_THRESHOLD
                         ):
-                            matched[geo_sub.code] = sub
+                            matched[geo_sub.code] = iso_sub
                             match_flag = True
                             break
-
-                # sub_name = sub["name"].lower()
-                # if (
-                #     name in sub_name
-                #     or sub_name in name
-                #     or geo_sub.name_ascii.lower() in sub_name
-                #     or sub_name in geo_sub.name_ascii.lower()
-                # ):
-                #     matched[geo_sub.code] = sub
-                #     match_flag = True
-                #     break
-                # elif sub["aliases"]:
-                #     aliases = sub["aliases"].lower().split("|")
-                #     if any(name in alias for alias in aliases):
-                #         matched[geo_sub.code] = sub
-                #         match_flag = True
-                #         break
-                # elif (
-                #     fuzz.ratio(name, sub_name) > 70
-                #     or fuzz.ratio(geo_sub.name_ascii, sub_name) > 70
-                # ):
-                #     matched[geo_sub.code] = sub
-                #     match_flag = True
-                #     break
 
             if not match_flag:
                 unmatched[geo_sub.code] = geo_sub.__dict__
 
+    print(f"direct matches: {match_count}")
     print(count)
     return matched, unmatched
 
@@ -216,6 +196,7 @@ def main():
 
     with open(BASE_PATH / "subs_by_country.json", "w", encoding="utf-8") as f:
         json.dump(subs_by_country, f, indent=2, ensure_ascii=False)
+
     with open(BASE_PATH / "subdivisions.json", "w", encoding="utf-8") as f:
         json.dump(matched, f, indent=2, ensure_ascii=False)
 
