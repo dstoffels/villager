@@ -1,4 +1,4 @@
-from villager import localities, City
+from villager import cities, City
 from utils import mangle
 import pytest
 import time
@@ -14,26 +14,26 @@ def track_test_metrics(request):
 
 class TestGet:
     def setup_method(self):
-        self.locality_sample: list[City] = [l for l in localities]
+        self.locality_sample: list[City] = [l for l in cities]
 
     def test_id(self):
         for l in self.locality_sample[:1000]:
-            locality = localities.get(l.villager_id)
+            locality = cities.get(l.villager_id)
             assert isinstance(locality, City)
             assert locality is not None
             assert l.name == locality.name
 
     def test_id_long_type(self):
-        test = localities[0]
-        locality = localities.get(f"way:{test.osm_id}")
+        test = cities[0]
+        locality = cities.get(f"way:{test.osm_id}")
 
         assert isinstance(locality, City)
         assert locality is not None
         assert test.name == locality.name
 
     def test_normalized(self):
-        test = localities[0]
-        locality = localities.get(f"   {test.villager_id.upper()}   ")
+        test = cities[0]
+        locality = cities.get(f"   {test.villager_id.upper()}   ")
         assert isinstance(locality, City)
         assert locality is not None
         assert test.name == locality.name
@@ -41,16 +41,16 @@ class TestGet:
 
 class TestLookup:
     def test_lookup(self):
-        for l in localities[:100]:
-            results = localities.lookup(l.name)
+        for l in cities[:100]:
+            results = cities.lookup(l.name)
             assert results
             assert isinstance(results, list)
             assert len(results) > 0
             assert l.name in [r.name for r in results]
 
     def test_is_normalized(self):
-        test = localities[0]
-        results = localities.lookup(f"   {test.name.upper()}   ")
+        test = cities[0]
+        results = cities.lookup(f"   {test.name.upper()}   ")
         assert isinstance(results, list)
         assert results, "Expected at least one result"
         assert test.name in [r.name for r in results]
@@ -58,7 +58,7 @@ class TestLookup:
 
 class TestSearch:
     def setup_method(self):
-        self.locality_sample: list[City] = localities[:1000]
+        self.locality_sample: list[City] = cities[:1000]
 
     def test_fuzzy_name_top10(self, request):
         seeds = range(10)
@@ -69,7 +69,7 @@ class TestSearch:
         for seed in seeds:
             for l in self.locality_sample:
                 test = mangle(l.name, typo_rate, seed)
-                results = localities.search(test, limit=10)
+                results = cities.search(test, limit=10)
                 total += 1
 
                 if not results:
@@ -94,7 +94,7 @@ class TestSearch:
             for l in self.locality_sample:
                 sub = l.subdivisions[len(l.subdivisions) - 1]
                 test = mangle(l.name, typo_rate, seed)
-                results = localities.search(f"{test} {sub.name}")
+                results = cities.search(f"{test} {sub.name}")
                 total += 1
                 if not results:
                     continue
@@ -116,7 +116,7 @@ class TestSearch:
         for seed in seeds:
             for l in self.locality_sample:
                 test = mangle(f"{l.name}", typo_rate, seed)
-                results = localities.search(f"{test} {l.country}")
+                results = cities.search(f"{test} {l.country}")
                 total += 1
                 if not results:
                     continue

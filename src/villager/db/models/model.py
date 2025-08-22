@@ -1,19 +1,20 @@
 from ..database import db
 from abc import abstractmethod
-from ..dtos import Country, Subdivision, SubdivisionBasic, City
+from ..dtos import Country, Subdivision, SubdivisionBasic, City, DTO
 from typing import TypeVar, Generic
 from abc import ABC
 import sqlite3
 from dataclasses import dataclass
 from typing import Type
 from .fields import (
-    AutoField,
-    CharField,
-    IntegerField,
-    FloatField,
-    ForeignKeyField,
     Field,
     Expression,
+    AutoField,
+    BooleanField,
+    CharField,
+    FloatField,
+    ForeignKeyField,
+    IntegerField,
 )
 from ...utils import (
     normalize,
@@ -22,14 +23,18 @@ from ...utils import (
     parse_other_names,
 )
 
-TDTO = TypeVar("TDTO")
+TDTO = TypeVar("TDTO", bound=DTO)
 
 
-@dataclass
 class RowData(Generic[TDTO]):
     id: int
     dto: TDTO
     tokens: str
+
+    def __init__(self, id: str, dto: TDTO):
+        self.id = id
+        self.dto = dto
+        self.tokens = dto.search_tokens
 
     def __iter__(self):
         yield self.id
@@ -40,8 +45,6 @@ class RowData(Generic[TDTO]):
 class Model(Generic[TDTO], ABC):
     table_name: str = ""
     dto_class: Type[TDTO] = None
-    query_select: str = ""
-    query_tables: str = ""
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> TDTO:
@@ -128,28 +131,16 @@ class Model(Generic[TDTO], ABC):
     @classmethod
     def fts_match(
         cls, query: str, limit=100, order_by="", exact: bool = False
-    ) -> list[RowData[TDTO]]:
+    ) -> list[TDTO]:
         if not exact:
             tokens = query.split()
             query = " ".join([f"{t}*" for t in tokens])
+            order_by = f", {order_by}" if order_by else ""
 
-        fts_table = cls.table_name + "_fts"
-        tables = [t for t in cls.query_tables]
-        tables[0] = f"FROM matched\n"
-
-        matched = f"""WITH matched AS (
-            SELECT rowid, * FROM {fts_table}
-            WHERE {fts_table} MATCH ?
-            ORDER BY bm25({fts_table}, 6.0, 1.5, 1.0, 1.0, 0)
-            LIMIT 200
-        )
-        """
-
-        fts_q = f"""{matched}
-                    {cls.query_select}
-                    {" ".join(tables)}
-                    LIMIT ?
-                    """
+        fts_q = f"""SELECT rowid as id, *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
+                    WHERE {cls.table_name} MATCH ?
+                    ORDER BY rank
+                    LIMIT ?"""
 
         rows = db.execute(fts_q, (query, limit)).fetchall()
         return [cls.from_row(row) for row in rows]

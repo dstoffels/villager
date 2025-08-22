@@ -4,4 +4,4 @@ from villager.db.dtos import Country, Subdivision, City
 
 countries = CountryRegistry(CountryModel)
 subdivisions = SubdivisionRegistry(SubdivisionModel)
-localities = CityRegistry(CityModel)
+cities = CityRegistry(CityModel)

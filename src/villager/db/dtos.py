@@ -5,11 +5,17 @@ from abc import ABC, abstractmethod
 
 @dataclass
 class DTO(ABC):
+    id: int
+
     def to_dict(self):
         return asdict(self)
 
     def json(self):
         return json.dumps(self.to_dict())
+
+    @property
+    def search_tokens(self) -> str:
+        return ""
 
     # def __str__(self):
     #     return self.json()
@@ -29,7 +35,7 @@ class Country(DTO):
 
 
 @dataclass
-class SubdivisionBasic(DTO):
+class SubdivisionBasic:
     name: str
     code: str
     admin_level: int
@@ -52,6 +58,10 @@ class Subdivision(DTO):
     country_alpha3: str
     subdivisions: list[SubdivisionBasic]
 
+    @property
+    def search_tokens(self) -> str:
+        return f"{self.name} {self.code} {self.country} {self.country_alpha2} {self.country_alpha3}"
+
 
 @dataclass
 class City(DTO):
@@ -65,4 +75,9 @@ class City(DTO):
     country_alpha2: str
     country_alpha3: str
     subdivisions: list[SubdivisionBasic]
-    alternate_names: list[str]
+
+    @property
+    def search_tokens(self):
+        return (
+            f'{self.display_name} {" ".join([f'{s.code}' for s in self.subdivisions])}'
+        )

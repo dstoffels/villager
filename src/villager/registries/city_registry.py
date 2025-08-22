@@ -56,7 +56,7 @@ class CityRegistry(Registry[CityModel, City]):
     ) -> list[City]:
         return [
             dto
-            for dto, score in sorted(
+            for dto in sorted(
                 matches, key=lambda r: (r[1], r[0].population or 0), reverse=True
             )[:limit]
         ]

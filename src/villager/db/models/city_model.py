@@ -26,22 +26,39 @@ class CityModel(Model[City]):
     population = IntegerField(index=False)
 
     @classmethod
-    def from_row(cls, row):
-        sub_fields = row["subdivisions"].split(" ")
-        subdivisions = []
-
-        for i, field in enumerate(sub_fields):
-            if i % 3 == 0:
-                subdivisions.append(
-                    SubdivisionBasic(
-                        name=field,
-                        code=sub_fields[i + 1],
-                        admin_level=sub_fields[i + 2],
-                    )
-                )
-
+    def from_row(cls, row: sqlite3.Row):
+        row: dict = dict(row)
+        subdivisions: list[SubdivisionBasic] = []
+        admin1: str = row["admin1"]
+        if admin1:
+            name, code = admin1.split("|")
+            code_parts = code.split(".")
+            code = code_parts[len(code_parts) - 1]
+            subdivisions.append(SubdivisionBasic(name, code, 1))
+        admin2: str = row["admin2"]
+        if admin2:
+            name, code = admin2.split("|")
+            code_parts = code.split(".")
+            code = code_parts[len(code_parts) - 1]
+            subdivisions.append(SubdivisionBasic(name, code, 2))
         row["subdivisions"] = subdivisions
 
+        country_parts = row["country"].split("|")
+
+        if len(country_parts) == 2:
+            country, alpha2 = country_parts
+        else:
+            country, alpha2, alpha3 = country_parts
+
+        row["country"] = country
+        row["country_alpha2"] = alpha2
+        row["country_alpha3"] = alpha3
+
+        row["display_name"] = (
+            f"{row['name']}{(", " + subdivisions[1].name) if admin2 else ""}{(', ' + subdivisions[0].name) if admin1 else""}, {country}"
+        )
+
+        row.pop("tokens")
         return super().from_row(row)
 
     # @classmethod

@@ -58,7 +58,7 @@ class Registry(Generic[TModel, TDTO], ABC):
         total_tok_len = sum(len(t) for t in tokens)
 
         # exact match on initial query unless overridden
-        candidates = self._model_cls.fts_match(
+        candidates: list[DTO] = self._model_cls.fts_match(
             norm_query, exact=True, order_by=self._order_by
         )
 
@@ -70,7 +70,7 @@ class Registry(Generic[TModel, TDTO], ABC):
         for step in range(MAX_ITERATIONS):
             results = process.extract(
                 norm_query,
-                choices=[c.tokens for c in candidates],
+                choices=[c.search_tokens for c in candidates],
                 scorer=fuzz.partial_token_set_ratio,
                 limit=None,
             )
@@ -79,7 +79,7 @@ class Registry(Generic[TModel, TDTO], ABC):
                 candidate = candidates[idx]
                 if score >= 100:
                     found_exact_match = True
-                matches[candidate.id] = (candidate.dto, score)
+                matches[candidate.id] = (candidate, score)
 
             if (
                 found_exact_match
