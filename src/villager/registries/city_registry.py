@@ -1,5 +1,5 @@
 from villager.registries.registry import Registry
-from villager.db import CityModel, SubdivisionModel, CountryModel, City
+from villager.db import CityModel, SubdivisionModel, CountryModel, City, RowData
 from villager.utils import normalize
 from villager.literals import CountryCode, CountryName
 
@@ -9,7 +9,7 @@ class CityRegistry(Registry[CityModel, City]):
 
     def __init__(self, model_cls):
         super().__init__(model_cls)
-        self._order_by = ", population DESC"
+        self._order_by = "population DESC"
 
     osm_type_map = {
         "way": "w",
@@ -52,11 +52,11 @@ class CityRegistry(Registry[CityModel, City]):
         return [r.dto for r in rows]
 
     def _sort_matches(
-        self, matches: list[tuple[City, float]], limit: int
+        self, matches: list[tuple[RowData[City], float]], limit: int
     ) -> list[City]:
         return [
-            dto
-            for dto in sorted(
-                matches, key=lambda r: (r[1], r[0].population or 0), reverse=True
+            (row_data.dto, score)
+            for row_data, score in sorted(
+                matches, key=lambda r: (r[1], r[0].dto.population or 0), reverse=True
             )[:limit]
         ]

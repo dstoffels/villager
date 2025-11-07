@@ -1,5 +1,8 @@
 import villager
 
-results = villager.cities.search("madison wisconsin dane county")
+results = villager.cities.search("amstrdam")
 
-print([(r.search_tokens, s) for r, s in results][0])
+
+for r in results:
+    print(r)
+    print()

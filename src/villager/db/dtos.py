@@ -6,19 +6,13 @@ from abc import ABC, abstractmethod
 @dataclass
 class DTO(ABC):
     id: int
+    name: str
 
     def to_dict(self):
         return asdict(self)
 
     def json(self):
         return json.dumps(self.to_dict())
-
-    @property
-    def search_tokens(self) -> str:
-        return ""
-
-    # def __str__(self):
-    #     return self.json()
 
 
 @dataclass
@@ -27,11 +21,11 @@ class Country(DTO):
     name: str
     alpha2: str
     alpha3: str
-    long_name: str
+    # long_name: str
 
-    @property
-    def search_tokens(self):
-        return f"{self.name} {self.alpha2} {self.alpha3} {self.long_name}"
+    # @property
+    # def search_tokens(self):
+    #     return f"{self.name} {self.alpha2} {self.alpha3} {self.long_name}"
 
 
 @dataclass
@@ -58,9 +52,9 @@ class Subdivision(DTO):
     country_alpha3: str
     subdivisions: list[SubdivisionBasic]
 
-    @property
-    def search_tokens(self) -> str:
-        return f"{self.name} {self.code} {self.country} {self.country_alpha2} {self.country_alpha3}"
+    # @property
+    # def search_tokens(self) -> str:
+    #     return f"{self.name} {self.code} {self.country} {self.country_alpha2} {self.country_alpha3}"
 
 
 @dataclass
@@ -76,8 +70,6 @@ class City(DTO):
     country_alpha3: str
     subdivisions: list[SubdivisionBasic]
 
-    @property
-    def search_tokens(self):
-        return (
-            f'{self.display_name} {" ".join([f'{s.code}' for s in self.subdivisions])}'
-        )
+    # @property
+    # def search_tokens(self):
+    #     return f'{self.name} {" ".join([f'{s.name} {s.code}' for s in self.subdivisions])} {self.country} {self.country_alpha2} {self.country_alpha3}'

@@ -54,11 +54,11 @@ class Registry(Generic[TModel, TDTO], ABC):
 
         norm_query = normalize(query)
         tokens = norm_query.split()
-        min_len = len(tokens)
+        min_len = len(tokens) if len(tokens) > 1 else 2
         total_tok_len = sum(len(t) for t in tokens)
 
         # exact match on initial query unless overridden
-        candidates: list[DTO] = self._model_cls.fts_match(
+        candidates: list[RowData[TDTO]] = self._model_cls.fts_match(
             norm_query, exact=True, order_by=self._order_by
         )
 
@@ -66,17 +66,23 @@ class Registry(Generic[TModel, TDTO], ABC):
         found_exact_match = False
 
         MAX_ITERATIONS = 20
+        NAME_WEIGHT = 0.7
+        TOKEN_WEIGHT = 0.3
 
         for step in range(MAX_ITERATIONS):
             results = process.extract(
                 norm_query,
                 choices=[c.search_tokens for c in candidates],
-                scorer=fuzz.partial_token_set_ratio,
+                scorer=fuzz.WRatio,
+                score_cutoff=30,
                 limit=None,
             )
 
-            for _, score, idx in results:
+            for _, token_score, idx in results:
                 candidate = candidates[idx]
+                name_score = fuzz.ratio(norm_query, candidate.dto.name)
+                score = NAME_WEIGHT * name_score + TOKEN_WEIGHT * token_score
+
                 if score >= 100:
                     found_exact_match = True
                 matches[candidate.id] = (candidate, score)
@@ -102,9 +108,11 @@ class Registry(Generic[TModel, TDTO], ABC):
         return self._sort_matches(matches.values(), limit)
 
     def _sort_matches(
-        self, matches: list[tuple[TDTO, float]], limit: int
+        self, matches: list[tuple[RowData[TDTO], float]], limit: int
     ) -> list[TDTO]:
         return [
-            dto
-            for dto, score in sorted(matches, key=lambda r: r[1], reverse=True)[:limit]
+            (row_data.dto, score)
+            for row_data, score in sorted(matches, key=lambda r: r[1], reverse=True)[
+                :limit
+            ]
         ]

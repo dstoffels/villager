@@ -26,33 +26,31 @@ from ...utils import (
 TDTO = TypeVar("TDTO", bound=DTO)
 
 
+@dataclass
 class RowData(Generic[TDTO]):
     id: int
     dto: TDTO
-    tokens: str
-
-    def __init__(self, id: str, dto: TDTO):
-        self.id = id
-        self.dto = dto
-        self.tokens = dto.search_tokens
+    search_tokens: str
 
     def __iter__(self):
         yield self.id
         yield self.dto
-        yield self.tokens
+        yield self.search_tokens
 
 
 class Model(Generic[TDTO], ABC):
     table_name: str = ""
     dto_class: Type[TDTO] = None
+    search_tokens: str = ""
 
     @classmethod
-    def from_row(cls, row: sqlite3.Row) -> TDTO:
+    def from_row(cls, row: sqlite3.Row) -> RowData[TDTO]:
         if not row:
             return None
 
         data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
-        return cls.dto_class(**data)
+        dto = cls.dto_class(**data)
+        return RowData(row["id"], dto, cls.search_tokens)
 
     @classmethod
     def create_table(cls) -> None:
@@ -131,15 +129,15 @@ class Model(Generic[TDTO], ABC):
     @classmethod
     def fts_match(
         cls, query: str, limit=100, order_by="", exact: bool = False
-    ) -> list[TDTO]:
+    ) -> list[RowData[TDTO]]:
         if not exact:
             tokens = query.split()
             query = " ".join([f"{t}*" for t in tokens])
-            order_by = f", {order_by}" if order_by else ""
+        order_by = f", {order_by}" if order_by else ""
 
         fts_q = f"""SELECT rowid as id, *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
                     WHERE {cls.table_name} MATCH ?
-                    ORDER BY rank
+                    ORDER BY rank{order_by}
                     LIMIT ?"""
 
         rows = db.execute(fts_q, (query, limit)).fetchall()

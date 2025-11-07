@@ -22,24 +22,13 @@ class SubdivisionModel(Model[Subdivision]):
     parent_code = CharField(index=False)
     country = CharField()
     tokens = CharField()
-    # admin_level = IntegerField(default=1)
-    # country_alpha2 = CharField()
-    # country_alpha3 = CharField()
-
-    # @classmethod
-    # def parse_raw(cls, raw_data):
-    #     country = CountryModel.get(CountryModel.alpha2 == raw_data["country_alpha2"])
-
-    #     return {
-    #         **raw_data,
-    #         "country": country.name,
-    #         "country_alpha2": country.alpha2,
-    #         "country_alpha3": country.alpha3,
-    #     }
 
     @classmethod
     def from_row(cls, row):
         row = dict(row)
+
+        print(row)
+        exit()
 
         row["iso_code"] = f'{row["country_alpha2"]}-{row["code"]}'
 

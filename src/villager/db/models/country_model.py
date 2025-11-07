@@ -1,5 +1,6 @@
 from .model import Model, AutoField, CharField, IntegerField, Country
 from villager.utils import normalize, tokenize
+import sqlite3
 
 
 class CountryModel(Model[Country]):
@@ -10,6 +11,14 @@ class CountryModel(Model[Country]):
     alpha2 = CharField()
     alpha3 = CharField()
     tokens = CharField()
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row):
+        row = dict(row)
+        cls.search_tokens = (
+            f'{row["name"]} {row["alpha2"]} {row["alpha3"]} {row.pop("tokens")}'
+        )
+        return super().from_row(row)
 
     @classmethod
     def parse_raw(cls, raw_data):

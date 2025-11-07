@@ -58,8 +58,30 @@ class CityModel(Model[City]):
             f"{row['name']}{(", " + subdivisions[1].name) if admin2 else ""}{(', ' + subdivisions[0].name) if admin1 else""}, {country}"
         )
 
-        row.pop("tokens")
+        cls.search_tokens = f'{row['name']} {f" ".join([f'{s.name} {s.code}' for s in subdivisions])} {country} {alpha2} {alpha3} {row.pop('tokens')}'
+
         return super().from_row(row)
+
+    @classmethod
+    def get_search_tokens(cls, row: dict):
+        return
+
+    @classmethod
+    def get_subdivisions(cls, row: sqlite3.Row) -> list[SubdivisionBasic]:
+        subdivisions: list[SubdivisionBasic] = []
+        admin1: str = row["admin1"]
+        if admin1:
+            name, code = admin1.split("|")
+            code_parts = code.split(".")
+            code = code_parts[len(code_parts) - 1]
+            subdivisions.append(SubdivisionBasic(name, code, 1))
+        admin2: str = row["admin2"]
+        if admin2:
+            name, code = admin2.split("|")
+            code_parts = code.split(".")
+            code = code_parts[len(code_parts) - 1]
+            subdivisions.append(SubdivisionBasic(name, code, 2))
+        return subdivisions
 
     # @classmethod
     # def from_row(cls, row: sqlite3.Row) -> RowData[Locality]:
