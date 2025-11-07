@@ -1,6 +1,6 @@
 import villager
 
-results = villager.cities.search("amstrdam")
+results = villager.cities.search("scotland")
 
 
 for r in results:

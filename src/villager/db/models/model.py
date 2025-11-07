@@ -50,7 +50,7 @@ class Model(Generic[TDTO], ABC):
 
         data = {k: row[k] for k in row.keys() if k in cls.dto_class.__annotations__}
         dto = cls.dto_class(**data)
-        return RowData(row["id"], dto, cls.search_tokens)
+        return RowData(row["id"], dto, cls.search_tokens.lower())
 
     @classmethod
     def create_table(cls) -> None:

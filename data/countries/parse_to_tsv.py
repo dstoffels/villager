@@ -18,6 +18,7 @@ class CountryDTO:
     alpha2: str
     alpha3: str
     name: str = ""
+    aliases: list[str] = field(default_factory=list)
     names: list[str] = field(default_factory=list)
     geonames_id: str = ""
     qid: str = ""
@@ -139,17 +140,46 @@ def parse_tokens(names: list[str], name: str) -> str:
 
 
 def build_row(country: CountryDTO) -> list[str]:
+    ALIASES = {
+        "GB": [
+            "Great Britain",
+            "Britain",
+            "UK",
+            "England",
+            "Scotland",
+            "Wales",
+            "Northern Ireland",
+        ],
+        "US": ["United States of America", "America"],
+        "CZ": ["Czech Republic"],
+        "CI": ["Ivory Coast", "Cote d'Ivoire"],
+        "MM": ["Burma"],
+        "SZ": ["Swaziland"],
+        "NL": ["Holland"],
+        "MK": ["Macedonia"],
+        "CV": ["Cape Verde"],
+        "LA": ["Laos"],
+        "SY": ["Syria"],
+        "RU": ["Russia", "USSR", "Soviet Union"],
+        "VN": ["Vietnam"],
+        "CG": ["Zaire"],
+        "BN": ["Brunei"],
+        "ST": ["São Tomé and Príncipe"],
+        "TL": ["East Timor"],
+        "RS": ["Yugoslavia"],
+    }
     return [
         country.geonames_id,
         country.name,
         country.alpha2,
         country.alpha3,
+        "|".join(ALIASES.get(country.alpha2, [])),
         parse_tokens(country.names, country.name),
     ]
 
 
 def print_to_tsv():
-    headers = ("id", "name", "alpha2", "alpha3", "tokens")
+    headers = ("id", "name", "alpha2", "alpha3", "aliases", "tokens")
     rows: list[list[str]] = [build_row(c) for c in countries.values()]
 
     with open(BASE_PATH / "countries.tsv", "w", encoding="utf-8", newline="") as f:

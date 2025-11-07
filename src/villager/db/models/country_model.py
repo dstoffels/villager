@@ -10,14 +10,14 @@ class CountryModel(Model[Country]):
     name = CharField()
     alpha2 = CharField()
     alpha3 = CharField()
+    aliases = CharField()
     tokens = CharField()
 
     @classmethod
     def from_row(cls, row: sqlite3.Row):
         row = dict(row)
-        cls.search_tokens = (
-            f'{row["name"]} {row["alpha2"]} {row["alpha3"]} {row.pop("tokens")}'
-        )
+        aliases = row["aliases"].replace("|", " ") if row["aliases"] else ""
+        cls.search_tokens = f'{row["name"]} {row["alpha2"]} {row["alpha3"]} {aliases} {row.pop("tokens")}'
         return super().from_row(row)
 
     @classmethod
