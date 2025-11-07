@@ -25,7 +25,7 @@
 		"name": "American Samoa",
 		"alpha2": "AS",
 		"alpha3": "ASM",
-		"aliases": "Samoa, United States|US-AS|ISO 3166-1:AS|American Sāmoa|US Samoa|U.S. Samoa|Territory of American Samoa|Samoa (American)|East Samoa|ASA|AS|as"
+		"aliases": "Samoa, United States|US-AS|American Sāmoa|US Samoa|U.S. Samoa|Territory of American Samoa|Samoa (American)|East Samoa"
 	},
 	{
 		"qid": "Q228",
@@ -103,7 +103,7 @@
 		"name": "Bahrain",
 		"alpha2": "BH",
 		"alpha3": "BHR",
-		"aliases": "Mamlakat al-Baḥrayn|Kingdom of Bahrain|ISO 3166-1:BH|Dawlat al-Bahrain|Bahrein Islands|bh|BAH"
+		"aliases": "Mamlakat al-Baḥrayn|Kingdom of Bahrain|Dawlat al-Bahrain|Bahrein Islands"
 	},
 	{
 		"qid": "Q25230",
@@ -329,28 +329,28 @@
 		"name": "Colombia",
 		"alpha2": "CO",
 		"alpha3": "COL",
-		"aliases": "CO|The Republic of Colombia|Republic of Colombia|ISO 3166-1:CO|Colombiá|COL"
+		"aliases": "The Republic of Colombia|Republic of Colombia|Colombiá"
 	},
 	{
 		"qid": "Q970",
 		"name": "Comoros",
 		"alpha2": "KM",
 		"alpha3": "COM",
-		"aliases": "Union of the Comoros|Union des Comores|Udzima wa Komori|ouvoimoja wakomori|Massiwa ya komori|Juzur al-Qumur|Juzur al-Qamar|al-Ittiḥād al-Qumurī|COM|km|the Comoros"
+		"aliases": "Union of the Comoros|Union des Comores|Udzima wa Komori|ouvoimoja wakomori|Massiwa ya komori|Juzur al-Qumur|Juzur al-Qamar|al-Ittiḥād al-Qumurī|the Comoros"
 	},
 	{
 		"qid": "Q26988",
 		"name": "Cook Islands",
 		"alpha2": "CK",
 		"alpha3": "COK",
-		"aliases": "Hervey Islands|ck|COK|Cook Group"
+		"aliases": "Hervey Islands|Cook Group"
 	},
 	{
 		"qid": "Q800",
 		"name": "Costa Rica",
 		"alpha2": "CR",
 		"alpha3": "CRI",
-		"aliases": "cr|CRI|CRC|Republic of Costa Rica"
+		"aliases": "Republic of Costa Rica"
 	},
 	{
 		"qid": "Q224",
@@ -371,7 +371,7 @@
 		"name": "Curaçao",
 		"alpha2": "CW",
 		"alpha3": "CUW",
-		"aliases": "Kòrsou|ISO 3166-1:CW|Island Territory of Curaçao|CUW|Curocao|Curaςao|Curazao|Curaçoa|Curacau|Country of Curaçao|CW|Curacao"
+		"aliases": "Kòrsou|Island Territory of Curaçao|CUW|Curocao|Curaςao|Curazao|Curaçoa|Curacau|Country of Curaçao|CW|Curacao"
 	},
 	{
 		"qid": "Q229",
@@ -422,13 +422,6 @@
 		"alpha2": "DO",
 		"alpha3": "DOM",
 		"aliases": "República Dominicana|Republica Dominicana|DomRep|Dominicana|DO|RD|DR"
-	},
-	{
-		"qid": "Q16957",
-		"name": "East Germany",
-		"alpha2": "DD",
-		"alpha3": "DDR",
-		"aliases": "GDR|East Germany|DDR|Deutsche Demokratische Republik|Communist Germany"
 	},
 	{
 		"qid": "Q736",
@@ -611,7 +604,7 @@
 		"name": "Guam",
 		"alpha2": "GU",
 		"alpha3": "GUM",
-		"aliases": "Guåhån|Guahan|GU|GUM|ISO 3166-1:GU|Island of Guam|Guam (USA)|Guåhan|US-GU|Territory of Guam"
+		"aliases": "Guåhån|Guahan|GU|GUM|Island of Guam|Guam (USA)|Guåhan|US-GU|Territory of Guam"
 	},
 	{
 		"qid": "Q774",
@@ -759,7 +752,7 @@
 		"name": "Jordan",
 		"alpha2": "JO",
 		"alpha3": "JOR",
-		"aliases": "Yarden|State of Jordan|Kingdom of Jordan|Hashemite Kingdom of Jordan|ISO 3166-1:JO|Giordania|HKJ"
+		"aliases": "Yarden|State of Jordan|Kingdom of Jordan|Hashemite Kingdom of Jordan|Giordania|HKJ"
 	},
 	{
 		"qid": "Q232",
@@ -828,7 +821,7 @@
 		"name": "Lebanon",
 		"alpha2": "LB",
 		"alpha3": "LBN",
-		"aliases": "Republic of Lebanon|Lubnan|Lebanese Republic|LBN|lb|State of Lebanon|ISO 3166-1:LB"
+		"aliases": "Republic of Lebanon|Lubnan|Lebanese Republic|LBN|lb|State of Lebanon"
 	},
 	{
 		"qid": "Q1013",
@@ -1041,13 +1034,6 @@
 		"aliases": "Népál|Nepál|Nekpal|Balpo-yul|Niepal|Ni-po-louo|Ni-po-lo|Nercerri|Nepaul|Nepall|Népaal|Nei-pal|Necbal|Ne-pel|Naipál|Bal-yul|Bal-po'i yul|Bal-bo|Balpo|Paï-pou|Pai-pou|Pa-eul-pou|Pa-lo-pou|Pa-le-pou|Palpou|Nipal|Nekbal|Nehpal|Naipála|Naipala|Federal Democratic Republic of Nepal|Balbo|Palpa"
 	},
 	{
-		"qid": "Q25227",
-		"name": "Netherlands Antilles",
-		"alpha2": "AN",
-		"alpha3": "ANT",
-		"aliases": "The Netherlands Antilles|Netherlands-Antilles|Netherlands Antilleans|Netherlands Antillean|Netherland Antillies|Netherland Antilles|Nederlandse Antillen|N.W.I.|ISO 3166-1:AN|Dutch Antilles/West Indies|Dutch Antilles|Dutch Antillean|Antillen|AHO|AN"
-	},
-	{
 		"qid": "Q33788",
 		"name": "New Caledonia",
 		"alpha2": "NC",
@@ -1109,7 +1095,7 @@
 		"name": "Northern Mariana Islands",
 		"alpha2": "MP",
 		"alpha3": "MNP",
-		"aliases": "US-MP|Northern Marianas|ISO 3166-1:MP|nmi|Commonwealth of the Northern Maria Islands|CNMI|NMI|mp|MP|the Northern Mariana Islands|Commonwealth of the Northern Mariana Islands"
+		"aliases": "US-MP|Northern Marianas|nmi|Commonwealth of the Northern Maria Islands|CNMI|NMI|mp|MP|the Northern Mariana Islands|Commonwealth of the Northern Mariana Islands"
 	},
 	{
 		"qid": "Q20",
@@ -1263,7 +1249,7 @@
 		"name": "Saint Barthélemy",
 		"alpha2": "BL",
 		"alpha3": "BLM",
-		"aliases": "St. Barths|St. Barthélemy|St. Barthelemy|St. Barth|St barts|St barths|St barthelemy|Saint Bartz|Saint Barts|Saint Barths|Saint Barthélémy|Saint Barthelemy|Saint Barth|Ouanalao|ISO 3166-1:BL|Île Saint-Barthélemy|Ile Saint-Barthélemy|Ile Saint-Barthelemy|FR-BL|Collectivity of Saint Barthélemy|Collectivity of Saint Barthelemy|Collectivité de Saint-Barthélemy|Collectivite de Saint-Barthelemy|America/St Barthelemy|Saint-Barthelemy|St. Barts|bl|Saint-Barthélémy"
+		"aliases": "St. Barths|St. Barthélemy|St. Barthelemy|St. Barth|St barts|St barths|St barthelemy|Saint Bartz|Saint Barts|Saint Barths|Saint Barthélémy|Saint Barthelemy|Saint Barth|Ouanalao|Île Saint-Barthélemy|Ile Saint-Barthélemy|Ile Saint-Barthelemy|FR-BL|Collectivity of Saint Barthélemy|Collectivity of Saint Barthelemy|Collectivité de Saint-Barthélemy|Collectivite de Saint-Barthelemy|America/St Barthelemy|Saint-Barthelemy|St. Barts|bl|Saint-Barthélémy"
 	},
 	{
 		"qid": "Q192184",
@@ -1314,7 +1300,6 @@
 		"alpha3": "SMR",
 		"aliases": "Most Serene Republic of San Marino|sm|SMR"
 	},
-	{ "qid": "Q3405693", "name": "Sark", "alpha2": "CQ", "alpha3": "CRQ", "aliases": "Sèr|Cerq|Ser" },
 	{
 		"qid": "Q851",
 		"name": "Saudi Arabia",
@@ -1468,7 +1453,7 @@
 		"name": "Syria",
 		"alpha2": "SY",
 		"alpha3": "SYR",
-		"aliases": "ISO 3166-1:SY|Syrian Arab Republic|sy|SYR|Surya"
+		"aliases": "Syrian Arab Republic|sy|SYR|Surya"
 	},
 	{
 		"qid": "Q1039",
@@ -1554,13 +1539,7 @@
 		"alpha3": "TTO",
 		"aliases": "Trinidad & Tobago|tt|Republic of Trinidad and Tobago|TRI|TTO"
 	},
-	{
-		"qid": "Q129237",
-		"name": "Trust Territory of the Pacific Islands",
-		"alpha2": "PC",
-		"alpha3": "PCI",
-		"aliases": "TTPI"
-	},
+
 	{
 		"qid": "Q948",
 		"name": "Tunisia",

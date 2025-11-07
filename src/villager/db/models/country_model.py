@@ -8,16 +8,20 @@ class CountryModel(Model[Country]):
     dto_class = Country
 
     name = CharField()
+    official_name = CharField()
+    numeric = IntegerField(index=False)
     alpha2 = CharField()
     alpha3 = CharField()
+    flag = CharField(index=False)
     aliases = CharField()
     tokens = CharField()
 
     @classmethod
     def from_row(cls, row: sqlite3.Row):
         row = dict(row)
-        aliases = row["aliases"].replace("|", " ") if row["aliases"] else ""
-        cls.search_tokens = f'{row["name"]} {row["alpha2"]} {row["alpha3"]} {aliases} {row.pop("tokens")}'
+        alias_str = row["aliases"].replace("|", " ") if row["aliases"] else ""
+        cls.search_tokens = f'{row["name"]} {row["alpha2"]} {row["alpha3"]} {alias_str} {row.pop("tokens")}'
+        row["aliases"] = row["aliases"].split("|") if alias_str else []
         return super().from_row(row)
 
     @classmethod

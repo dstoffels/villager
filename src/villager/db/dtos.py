@@ -19,13 +19,12 @@ class DTO(ABC):
 class Country(DTO):
     id: int
     name: str
+    official_name: str
     alpha2: str
     alpha3: str
-    # long_name: str
-
-    # @property
-    # def search_tokens(self):
-    #     return f"{self.name} {self.alpha2} {self.alpha3} {self.long_name}"
+    numeric: int
+    aliases: list[str] = field(default_factory=list)
+    flag: str = ""
 
 
 @dataclass

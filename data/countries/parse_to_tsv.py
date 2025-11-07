@@ -17,12 +17,15 @@ from dataclasses import dataclass, field
 class CountryDTO:
     alpha2: str
     alpha3: str
+    numeric: int
     name: str = ""
+    official_name: str = ""
     aliases: list[str] = field(default_factory=list)
     names: list[str] = field(default_factory=list)
     geonames_id: str = ""
     qid: str = ""
     fips: str = ""
+    flag: str = ""
 
 
 countries: dict[str, CountryDTO] = {}
@@ -36,9 +39,12 @@ def init_iso_countries():
                 alpha2=row["#country_code_alpha2"],
                 alpha3=row["country_code_alpha3"],
                 name=row["name_short"],
+                official_name=row["name_long"],
+                flag=row["flag"],
+                numeric=int(row["numeric_code"]),
             )
 
-            country.names.append(row["name_long"])
+            # country.names.append(row["name_long"])
             countries[country.alpha2] = country
 
 
@@ -48,23 +54,25 @@ def merge_wikidata():
     ) as f:
         wiki_countries = json.load(f)
         for row in wiki_countries:
-            alpha2 = row["alpha2"]
-            if alpha2 not in countries:
-                countries[alpha2] = CountryDTO(
-                    alpha2=alpha2,
-                    alpha3=row.get("alpha3", ""),
-                    name=row.get("name", ""),
-                )
+            if row.get("alpha3"):
+                alpha2 = row["alpha2"]
+                if alpha2 not in countries:
+                    countries[alpha2] = CountryDTO(
+                        alpha2=alpha2,
+                        alpha3=row.get("alpha3", ""),
+                        name=row.get("name", ""),
+                        numeric=None,
+                    )
 
-            country: CountryDTO = countries.get(row["alpha2"])
-            country.qid = row.get("qid", "")
+                country: CountryDTO = countries.get(row["alpha2"])
+                country.qid = row.get("qid", "")
 
-            name = row.get("name", "")
-            if name and name not in country.names:
-                country.names.append(name)
+                name = row.get("name", "")
+                if name and name not in country.names:
+                    country.names.append(name)
 
-            names: list[str] = row.get("aliases", "").split("|")
-            country.names.extend(names)
+                names: list[str] = row.get("aliases", "").split("|")
+                country.names.extend(names)
 
 
 def merge_geonames():
@@ -93,35 +101,26 @@ def merge_geonames():
                 country.names.append(name)
 
 
-# deprecated. Too much noise in the alt names data
+def clean_tokens():
+    for country in countries.values():
 
-# def merge_alt_names():
-#     with open(BASE_PATH.parent / "alts.tsv", "r", encoding="utf-8") as f:
-#         data = csv.DictReader(f, delimiter="\t")
-#         alts: dict[str, list[str]] = {a["id"]: a["alt_names"].split("|") for a in data}
+        # initial deduplication
+        country.names = list(set(country.names))
 
-#         for country in countries.values():
-#             alt: list[str] = alts.get(country.geonames_id, None)
-#             if not alt:
-#                 continue
-
-#             country.names.extend(alt)
-
-#             # initial deduplication
-#             country.names = list(set(country.names))
-
-#             country_names = [name for name in country.names]
-#             for name in country_names:
-#                 name_lower = name.lower()
-#                 if (
-#                     "ISO 3166" in name
-#                     or name_lower == country.alpha2.lower()
-#                     or name_lower == country.alpha3.lower()
-#                     or name_lower == country.name.lower()
-#                     or name_lower == country.fips.lower()
-#                     or any(n.lower() == name_lower for n in country.names if n != name)
-#                 ):
-#                     country.names.remove(name)
+        country_names = [name for name in country.names]
+        for name in country_names:
+            name_lower = name.lower()
+            if (
+                "ISO 3166" in name
+                or name_lower == country.alpha2.lower()
+                or name_lower == country.alpha3.lower()
+                or name_lower == country.name.lower()
+                or name_lower == country.official_name.lower()
+                or name_lower == country.numeric.__str__().lower()
+                or name_lower == country.fips.lower()
+                or any(n.lower() == name_lower for n in country.names if n != name)
+            ):
+                country.names.remove(name)
 
 
 def parse_tokens(names: list[str], name: str) -> str:
@@ -150,36 +149,52 @@ def build_row(country: CountryDTO) -> list[str]:
             "Wales",
             "Northern Ireland",
         ],
-        "US": ["United States of America", "America"],
-        "CZ": ["Czech Republic"],
+        "US": ["America"],
         "CI": ["Ivory Coast", "Cote d'Ivoire"],
         "MM": ["Burma"],
         "SZ": ["Swaziland"],
         "NL": ["Holland"],
         "MK": ["Macedonia"],
         "CV": ["Cape Verde"],
-        "LA": ["Laos"],
         "SY": ["Syria"],
         "RU": ["Russia", "USSR", "Soviet Union"],
         "VN": ["Vietnam"],
-        "CG": ["Zaire"],
+        "CG": ["Congo-Brazzaville", "Congo Republic"],
+        "CD": ["DRC", "Congo-Kinshasa", "DR Congo", "Zaire"],
         "BN": ["Brunei"],
         "ST": ["São Tomé and Príncipe"],
         "TL": ["East Timor"],
         "RS": ["Yugoslavia"],
+        "BQ": ["Netherlands Antilles", "Dutch Antilles", "Carribean Netherlands"],
+        "SX": ["Land Sint Maarten", "Dutch Sint Maarten"],
+        "MF": ["Collectivité de Saint-Martin"],
+        "TW": ["ROC"],
     }
     return [
         country.geonames_id,
         country.name,
+        country.official_name,
         country.alpha2,
         country.alpha3,
+        country.numeric,
+        country.flag,
         "|".join(ALIASES.get(country.alpha2, [])),
         parse_tokens(country.names, country.name),
     ]
 
 
 def print_to_tsv():
-    headers = ("id", "name", "alpha2", "alpha3", "aliases", "tokens")
+    headers = (
+        "id",
+        "name",
+        "official_name",
+        "alpha2",
+        "alpha3",
+        "numeric",
+        "flag",
+        "aliases",
+        "tokens",
+    )
     rows: list[list[str]] = [build_row(c) for c in countries.values()]
 
     with open(BASE_PATH / "countries.tsv", "w", encoding="utf-8", newline="") as f:
@@ -193,7 +208,7 @@ def main():
     init_iso_countries()
     merge_wikidata()
     merge_geonames()
-    # merge_alt_names()
+    clean_tokens()
     print_to_tsv()
 
 
