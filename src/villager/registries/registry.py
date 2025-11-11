@@ -66,7 +66,7 @@ class Registry(Generic[TModel, TDTO], ABC):
 
         # exact match on initial query unless overridden
         candidates: list[RowData[TDTO]] = self._model_cls.fts_match(
-            norm_query, exact=True, order_by=self._order_by
+            norm_query, exact_match=True, order_by=self._order_by
         )
 
         for step in range(MAX_ITERATIONS):

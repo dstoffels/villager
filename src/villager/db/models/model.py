@@ -92,15 +92,17 @@ class Model(Generic[TDTO], ABC):
         return [cls.from_row(row) for row in rows]
 
     @classmethod
-    def fts_match(cls, query: str, limit=100, order_by="", exact: bool = False):
-        if not exact:
+    def fts_match(
+        cls, query: str, limit=100, order_by: list[str] = [], exact_match: bool = False
+    ):
+        if not exact_match:
             tokens = query.split()
             query = " ".join([f"{t}*" for t in tokens])
-        order_by = f", {order_by}" if order_by else ""
+        order_by = "ORDER BY " + ", ".join(order_by) if order_by else ""
 
         fts_q = f"""SELECT *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
                     WHERE {cls.table_name} MATCH ?
-                    ORDER BY rank{order_by}
+                    {order_by}
                     LIMIT ?"""
 
         rows: list[sqlite3.Row] = db.execute(fts_q, (query, limit)).fetchall()

@@ -58,8 +58,10 @@ def ingest_cities() -> None:
     cities: list[dict] = []
     with open(DATA_DIR / "cities/cities.tsv", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
-        for line in reader:
-            cities.append(clean_row(line))
+        for row in reader:
+            MAX_DIGITS = 9
+            row["population"] = f"{int(row['population']):0{MAX_DIGITS}d}"
+            cities.append(clean_row(row))
 
     with db.atomic():
         for batch in chunked(list(cities), 1000):

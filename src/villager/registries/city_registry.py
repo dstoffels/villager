@@ -49,7 +49,7 @@ class CityRegistry(Registry[CityModel, City]):
         if subdivision:
             norm_q += f" {subdivision}"
 
-        rows = self._model_cls.fts_match(norm_q, exact=True)
+        rows = self._model_cls.fts_match(norm_q, exact_match=True)
         return [r.dto for r in rows]
 
     def _sort_matches(self, matches: list, limit: int) -> list[City]:

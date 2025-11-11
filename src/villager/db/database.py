@@ -7,6 +7,8 @@ import sqlite3
 
 
 class Database:
+    MAX_PREFIX = 24
+
     def __init__(self, db_path: str):
         self.db_path: str = db_path
         self._conn: sqlite3.Connection | None = None
@@ -98,7 +100,7 @@ class Database:
 
         fts_options = [
             '''tokenize = "unicode61 remove_diacritics 2"''',
-            'prefix="2 3"',
+            f'prefix="{' '.join([str(i) for i in range(2, self.MAX_PREFIX + 1)])}"',
         ]
 
         options_str = ", " + ", ".join(fts_options) if fts_options else ""

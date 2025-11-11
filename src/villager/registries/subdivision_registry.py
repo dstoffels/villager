@@ -37,7 +37,7 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
         if country:
             norm_q = f"{norm_q} {country}"
 
-        rows = self._model_cls.fts_match(norm_q, exact=True)
+        rows = self._model_cls.fts_match(norm_q, exact_match=True)
 
         return [r.dto for r in rows]
 
