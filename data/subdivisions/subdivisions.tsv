@@ -1,4 +1,4 @@
-id	name	alt_names	geonames_code	iso_code	country	type	parent_rowid
+id	name	alt_names	geonames_code	iso_code	country	type	parent_id
 1	Andorra la Vella	Andorra La Vella	AD.07	AD-07	Andorra|AD|AND	PARISH	
 2	Canillo		AD.02	AD-02	Andorra|AD|AND	PARISH	
 3	Encamp		AD.03	AD-03	Andorra|AD|AND	PARISH	

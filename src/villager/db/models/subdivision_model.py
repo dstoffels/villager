@@ -21,7 +21,7 @@ class SubdivisionModel(Model[Subdivision]):
     geonames_code = CharField()
     iso_code = CharField()
     country = CharField()
-    parent_rowid = CharField()
+    parent_id = CharField()
 
     @classmethod
     def from_row(cls, row):

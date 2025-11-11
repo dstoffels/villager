@@ -115,8 +115,15 @@ class Database:
         """Analyze database for query optimization"""
         return self.execute("ANALYZE")
 
-    def truncate(self, table_name: str):
-        self.execute(f"DELETE FROM {table_name}")
+    def nuke(self) -> None:
+        self.execute("PRAGMA writable_schema = 1;")
+        self.execute(
+            "DELETE FROM sqlite_master WHERE type IN ('table', 'index', 'trigger');"
+        )
+        self.execute("PRAGMA writable_schema = 0;")
+        self.commit()
+
+        self.vacuum()
 
 
 db = Database("src/villager/db/villager.db")

@@ -21,22 +21,21 @@ class SubdivisionDTO:
     iso_code: str = ""
     type: str = ""
     alt_names: list[str] = field(default_factory=list)
-    id: int = field(default=-1)
+    id: int = field(init=False)
     parent_id: int | None = None
     parent_code: str | None = None  # Can be iso or GeoNames code, detect later
 
     # deterministically hash a unique id to later map admin2 subdivisions to their parent
     def __post_init__(self):
-        if self.id != -1:
-            key_parts = [
-                self.country_alpha2,
-                str(self.admin_level),
-                normalize(self.name).lower(),
-                self.iso_code
-                or self.geonames_code,  # whichever comes first at creation
-            ]
-            key = "|".join(key_parts)
-            self.id = int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
+        # if self.id != -1:
+        key_parts = [
+            self.country_alpha2,
+            str(self.admin_level),
+            normalize(self.name).lower(),
+            self.iso_code or self.geonames_code,  # whichever comes first at creation
+        ]
+        key = "|".join(key_parts)
+        self.id = int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
 
     def concat_country(self) -> str:
         return "|".join(
@@ -131,13 +130,11 @@ def load_countries() -> dict[str, CountryDTO]:
         return {
             row["alpha2"]: CountryDTO(
                 name=row["name"],
+                official_name=row["official_name"],
                 alpha2=row["alpha2"],
                 alpha3=row["alpha3"],
                 numeric=row["numeric"],
-                official_name=row["official_name"],
-                aliases=row["aliases"].split("|") if row["aliases"] else [],
-                names=row["tokens"].split("|") if row["tokens"] else [],
-                geonames_id=row["id"],
+                alt_names=row["alt_names"].split("|") if row["alt_names"] else [],
             )
             for row in csv_reader
         }

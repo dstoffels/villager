@@ -17,13 +17,13 @@ class CityModel(Model[City]):
     dto_class = City
 
     name = CharField()
+    alt_names = CharField()
     admin1 = CharField()
     admin2 = CharField()
     country = CharField()
-    tokens = CharField()
+    population = IntegerField(index=False)
     lat = FloatField(index=False)
     lng = FloatField(index=False)
-    population = IntegerField(index=False)
 
     @classmethod
     def from_row(cls, row: sqlite3.Row):

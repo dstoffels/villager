@@ -9,12 +9,11 @@ class CountryModel(Model[Country]):
 
     name = CharField()
     official_name = CharField()
-    numeric = IntegerField(index=False)
     alpha2 = CharField()
     alpha3 = CharField()
+    numeric = IntegerField(index=False)
+    alt_names = CharField()
     flag = CharField(index=False)
-    aliases = CharField()
-    tokens = CharField()
 
     @classmethod
     def from_row(cls, row: sqlite3.Row):
