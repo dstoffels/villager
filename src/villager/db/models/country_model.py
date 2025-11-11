@@ -30,7 +30,7 @@ class CountryModel(Model[Country]):
         numeric: int,
         alt_names: str,
         flag: str,
-        **extra
+        **kwargs
     ):
         self.name = name
         self.official_name = official_name
@@ -39,3 +39,5 @@ class CountryModel(Model[Country]):
         self.numeric = numeric
         self.alt_names = alt_names
         self.flag = flag
+
+        super().__init__(**kwargs)

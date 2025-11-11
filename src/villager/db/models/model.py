@@ -11,10 +11,16 @@ from .fields import Field, Expression
 TDTO = TypeVar("TDTO", bound=DTO)
 
 
-@dataclass(slots=True)
 class Model(Generic[TDTO], ABC):
     table_name = ""
     dto_class: Type[TDTO] = None
+
+    id: int
+    rank: float
+
+    def __init__(self, id: int, rank: float, **kwargs):
+        self.id = id
+        self.rank = rank
 
     @classmethod
     def from_row(cls, row: sqlite3.Row):
@@ -100,10 +106,15 @@ class Model(Generic[TDTO], ABC):
             query = " ".join([f"{t}*" for t in tokens])
         order_by = "ORDER BY " + ", ".join(order_by) if order_by else ""
 
-        fts_q = f"""SELECT *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
+        fts_q = f"""SELECT rowid as id, *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
                     WHERE {cls.table_name} MATCH ?
                     {order_by}
                     LIMIT ?"""
 
         rows: list[sqlite3.Row] = db.execute(fts_q, (query, limit)).fetchall()
         return [cls.from_row(row) for row in rows if row]
+
+    def __str__(self):
+        import json
+
+        return json.dumps(self.__dict__, indent=4)

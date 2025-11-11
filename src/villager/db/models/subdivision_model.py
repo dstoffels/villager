@@ -33,7 +33,7 @@ class SubdivisionModel(Model[Subdivision]):
         iso_code: str,
         country: str,
         parent_id: str,
-        **extra
+        **kwargs
     ):
         self.name = name
         self.alt_names = alt_names
@@ -42,3 +42,5 @@ class SubdivisionModel(Model[Subdivision]):
         self.iso_code = iso_code
         self.country = country
         self.parent_id = parent_id
+
+        super().__init__(**kwargs)

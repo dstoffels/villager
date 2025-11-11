@@ -2,7 +2,7 @@ from villager.db import db, CountryModel, SubdivisionModel, CityModel
 import csv
 from pathlib import Path
 import zipfile
-import os
+import argparse
 
 DATA_DIR = Path(__file__).parent
 
@@ -83,15 +83,22 @@ def compress_db(db_path: str | Path) -> Path:
         zipf.write(db_path, arcname=db_path.name)
 
 
-def run() -> None:
+def main() -> None:
+    parser = argparse.ArgumentParser("options")
+    parser.add_argument(
+        "--full", "-f", action="store_true", help="Ingest cities into the sqlite db."
+    )
+    args = parser.parse_args()
+
     db.nuke()
     db.create_tables([CountryModel, SubdivisionModel, CityModel])
     ingest_countries()
     ingest_subdivisions()
-    # ingest_cities()
+    if args.full:
+        ingest_cities()
     db.vacuum()
     # compress_db(db.db_path)
 
 
 if __name__ == "__main__":
-    run()
+    main()

@@ -13,7 +13,10 @@ class DTO(ABC):
         return asdict(self)
 
     def json(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), indent=2)
+
+    def __str__(self):
+        return self.json()
 
 
 @dataclass

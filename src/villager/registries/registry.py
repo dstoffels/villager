@@ -35,16 +35,6 @@ class Registry(Generic[TModel, TDTO], ABC):
     def count(self) -> int:
         return self.__len__()
 
-    @property
-    def cache(self) -> list[TDTO]:
-        if self._cache is None:
-            self._cache = [r.dto for r in self._model_cls.select()]
-        return self._cache
-
-    # @abstractmethod
-    # def get(self, identifier: str | int) -> TDTO | None:
-    #     return None
-
     @abstractmethod
     def lookup(self, identifier: str, **kwargs) -> list[TDTO]:
         return []

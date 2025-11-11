@@ -62,7 +62,7 @@ class CityModel(Model[City]):
         population: int,
         lat: float,
         lng: float,
-        **extra
+        **kwargs
     ):
         self.name = name
         self.admin1 = admin1
@@ -72,3 +72,5 @@ class CityModel(Model[City]):
         self.population = population
         self.lat = lat
         self.lng = lng
+
+        super().__init__(**kwargs)

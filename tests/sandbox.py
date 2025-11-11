@@ -9,8 +9,8 @@ for i in range(100):
 end = time.perf_counter()
 
 print()
-print(len(results))
+for r in results:
+    print(r)
 
-import math
 
 print(f"Took {round((end - start) * 1000,2)}ms")
