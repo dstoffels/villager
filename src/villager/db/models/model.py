@@ -114,34 +114,38 @@ class Model(Generic[TDTO], ABC):
     @classmethod
     def fts_match(
         cls,
-        query: str,
-        column: str = None,
-        exact_match: bool = False,
+        query: str = None,
+        field_queries: dict[str, str] = None,
+        exact_match: bool = True,
         order_by: list[str] = [],
-        limit: int | None = 100,
+        limit: int = None,
     ):
-        if not query:
+        if field_queries:
+            params = list(
+                sanitize_fts_query(q, exact_match) for q in field_queries.values()
+            )
+            q_where = "WHERE " + "AND ".join(
+                f"{col} MATCH ?" for col in field_queries.keys()
+            )
+        elif query:
+            query = sanitize_fts_query(query, exact_match)
+
+            params = [query]
+            q_where = f"WHERE {cls.table_name} MATCH ?"
+        else:
             return []
-
-        query = sanitize_fts_query(query)
-
-        # attempt to match across all fields unless explicit column arg
-        column = column or cls.table_name
-
-        if not exact_match:
-            tokens = query.split()
-            query = " ".join([f"{t}*" for t in tokens])
 
         q_order_by = "ORDER BY " + ", ".join(order_by) if order_by else ""
 
         q_limit = "LIMIT ?" if limit is not None else ""
 
         q = f"""SELECT rowid as id, *, bm25({cls.table_name}, 50.0) as rank FROM {cls.table_name}
-                    WHERE {column} MATCH ?
+                    {q_where}
                     {q_order_by}
                     {q_limit}"""
 
-        params = (query, limit) if limit is not None else (query,)
+        if limit:
+            params.append(limit)
 
         cursor = cls.db.execute(q, params)
         rows: list[sqlite3.Row] = cursor.fetchall()

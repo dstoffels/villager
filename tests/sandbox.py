@@ -1,4 +1,5 @@
-import villager
+def trunc(text: str) -> str:
+    return text[:-2] if len(text) > 4 else text
 
-c = villager.countries.get(alpha2="US")
-print(c)
+
+print(trunc("Saint Kitts and Nevis"))

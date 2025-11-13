@@ -65,10 +65,9 @@ def parse_other_names(name, other_names: dict[str, str]) -> tuple[str, str]:
 FTS_RESERVED = {"OR", "AND", "NOT", "NEAR"}
 
 
-def sanitize_fts_query(query: str) -> str:
+def sanitize_fts_query(query: str, exact_match: bool) -> str:
     """
-    Keep alphanumerics, spaces, *, quotes, and all Unicode combining marks.
-    Replace only characters illegal in FTS5.
+    Keep alphanumerics, spaces, *, quotes, and all Unicode combining marks. Replaces illegal characters and adds wildcards to each token for prefix matching.
     """
     q = re.sub(r"[^\w\s*\"\u0300-\u036f]+", " ", query)
 
@@ -76,4 +75,6 @@ def sanitize_fts_query(query: str) -> str:
     for i, token in enumerate(tokens):
         if token in FTS_RESERVED:
             tokens[i] = f'"{token}"'
+        if not exact_match:
+            tokens[i] = f"{token}*"
     return " ".join(tokens)
