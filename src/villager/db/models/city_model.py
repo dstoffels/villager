@@ -9,6 +9,7 @@ class CityModel(Model[City]):
     dto_class = City
 
     name = CharField()
+    geonames_id = CharField()
     admin1 = CharField()
     admin2 = CharField()
     country = CharField()
@@ -41,6 +42,7 @@ class CityModel(Model[City]):
 
         return City(
             id=self.id,
+            geonames_id=int(self.geonames_id),
             name=self.name,
             display_name=display_name,
             subdivisions=subdivisions,
@@ -48,13 +50,14 @@ class CityModel(Model[City]):
             country_alpha2=alpha2,
             country_alpha3=alpha3,
             alt_names=self.alt_names.split("|"),
-            population=self.population,
-            lat=self.lat,
-            lng=self.lng,
+            population=int(self.population),
+            lat=float(self.lat),
+            lng=float(self.lng),
         )
 
     def __init__(
         self,
+        geonames_id: int,
         name: str,
         admin1: str,
         admin2: str,
@@ -65,6 +68,7 @@ class CityModel(Model[City]):
         lng: float,
         **kwargs
     ):
+        self.geonames_id = geonames_id
         self.name = name
         self.admin1 = admin1
         self.admin2 = admin2

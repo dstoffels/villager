@@ -1,16 +1,11 @@
 from villager import countries, Country
 import pytest
-import random
-
-
-def random_country() -> Country:
-    id = random.choice(range(1, countries.count))
-    return countries.get(id=id)
+from utils import select_random
 
 
 @pytest.fixture
 def country() -> Country:
-    return random_country()
+    return select_random(countries)
 
 
 class TestGet:
@@ -31,7 +26,7 @@ class TestFilter:
     def test_filter_by_official_name(self, country: Country):
         """should filter results by country's official_name field"""
         while not country.official_name:
-            country = random_country()
+            country = select_random(countries)
 
         results = countries.filter(official_name=country.official_name)
 
@@ -41,7 +36,7 @@ class TestFilter:
     def test_filter_by_alt_name(self, country: Country):
         """should filter results by country's alt_names field"""
         while not country.alt_names:
-            country = random_country()
+            country = select_random(countries)
 
         alt_name = country.alt_names[0]
         results = countries.filter(alt_name=alt_name)

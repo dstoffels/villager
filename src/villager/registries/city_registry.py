@@ -18,6 +18,22 @@ class CityRegistry(Registry[CityModel, City]):
         "relation": "r",
     }
 
+    def get(self, *, id: int = None, geonames_id: str = None):
+        cls = self._model_cls
+
+        field_map = {
+            "id": None,
+            "geonames_id": cls.geonames_id,
+        }
+
+        model = None
+        for arg, field in field_map.items():
+            val = locals()[arg]
+            if val is not None:
+                model = cls.get_by_id(val) if arg == "id" else cls.get(field == val)
+
+        return model.to_dto() if model is not None else None
+
     # def filter(
     #     self,
     #     name: str,

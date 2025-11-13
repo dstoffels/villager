@@ -58,6 +58,7 @@ class Subdivision(DTO):
 @dataclass
 class City(DTO):
     id: int
+    geonames_id: int
     name: str
     display_name: str | None
     subdivisions: list[SubdivisionBasic]
