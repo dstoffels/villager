@@ -155,6 +155,7 @@ class Model(Generic[TDTO], ABC):
     def drop(cls):
         cls.db.execute(f"DROP TABLE IF EXISTS {cls.table_name}")
         cls.db.commit()
+        cls.db.vacuum()
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
