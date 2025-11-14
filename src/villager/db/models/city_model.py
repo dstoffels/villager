@@ -2,6 +2,8 @@ from .model import Model
 from .fields import CharField, IntField, FloatField
 from ..dtos import SubdivisionBasic, City
 from dataclasses import dataclass
+from villager.utils import clean_row, chunked
+import csv
 
 
 class CityModel(Model[City]):
@@ -49,11 +51,30 @@ class CityModel(Model[City]):
             country=country,
             country_alpha2=alpha2,
             country_alpha3=alpha3,
-            alt_names=self.alt_names.split("|"),
+            alt_names=self.alt_names.split("|") if self.alt_names else [],
             population=int(self.population),
             lat=float(self.lat),
             lng=float(self.lng),
         )
+
+    @classmethod
+    def load(cls, file):
+        cls.db.create_tables([CityModel])
+        cities: list[dict] = []
+        reader = csv.DictReader(file, delimiter="\t")
+
+        for row in reader:
+            MAX_DIGITS = 9
+            row["population"] = f"{int(row['population']):0{MAX_DIGITS}d}"
+            cities.append(clean_row(row))
+
+        with cls.db.atomic():
+            for batch in chunked(list(cities), 1000):
+                try:
+                    cls.insert_many(batch)
+                except Exception as e:
+                    print(f"Unexpected error on batch: {e}")
+                    raise e
 
     def __init__(
         self,
@@ -66,7 +87,7 @@ class CityModel(Model[City]):
         population: int,
         lat: float,
         lng: float,
-        **kwargs
+        **kwargs,
     ):
         self.geonames_id = geonames_id
         self.name = name

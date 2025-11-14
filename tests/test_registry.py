@@ -37,12 +37,12 @@ class TestFilter:
 
     def test_filter_limit(self, registry: Registry):
         """should limit the number of results"""
-        results = registry.filter("us", limit=1)
+        results = registry.filter("be", limit=1)
         assert len(results) == 1
 
     def test_filter_query(self, registry: Registry):
         """should return a list of objects where any field contains the input"""
-        query = "United"
+        query = "Andorra"
         results = registry.filter(query)
         assert len(results) > 0
         assert all(

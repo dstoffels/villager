@@ -78,3 +78,13 @@ def sanitize_fts_query(query: str, exact_match: bool) -> str:
         if not exact_match:
             tokens[i] = f"{token}*"
     return " ".join(tokens)
+
+
+def clean_row(row: dict[str, str]) -> dict[str, str | None]:
+    """Clean and normalize all fields in a dict"""
+    return {k: (v if v.strip() != "" else None) for k, v in row.items()}
+
+
+def chunked(list: list, size: int):
+    for i in range(0, len(list), size):
+        yield list[i : i + size]
