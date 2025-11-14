@@ -34,7 +34,7 @@ class CityModel(Model[City]):
 
         # parse country
         country_parts = self.country.split("|")
-        country = country_parts[0]
+        country = country_parts[0] if country_parts else None
         alpha2 = country_parts[1] if len(country_parts) > 1 else None
         alpha3 = country_parts[2] if len(country_parts) > 2 else None
 
@@ -91,9 +91,9 @@ class CityModel(Model[City]):
     ):
         self.geonames_id = geonames_id
         self.name = name
-        self.admin1 = admin1
-        self.admin2 = admin2
-        self.country = country
+        self.admin1 = admin1 or None
+        self.admin2 = admin2 or None
+        self.country = country or ""
         self.alt_names = alt_names or ""
         self.population = population
         self.lat = lat

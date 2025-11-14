@@ -31,6 +31,7 @@ class CityRegistry(Registry[CityModel, City]):
 
     def load(self) -> None:
         if self._loaded:
+            print("Cities already loaded.")
             return
         import requests
         import io
@@ -57,7 +58,13 @@ class CityRegistry(Registry[CityModel, City]):
             )
 
     def unload(self) -> None:
+        if not self._loaded:
+            print("No cities to unload.")
+            return
+        print(f"Removing {self.count} cities")
         CityModel.truncate()
+        self._meta.set(self.META_LOADED_KEY, "0")
+        print("Cities unloaded from db.")
 
     def _ensure_loaded(self):
         if not self._loaded:

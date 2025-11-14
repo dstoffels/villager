@@ -5,7 +5,7 @@ import json
 from abc import ABC
 
 
-@dataclass
+@dataclass(slots=True)
 class DTO(ABC):
     id: int
     name: str
@@ -20,7 +20,7 @@ class DTO(ABC):
         return self.json()
 
 
-@dataclass
+@dataclass(slots=True)
 class Country(DTO):
     id: int
     name: str
@@ -32,7 +32,7 @@ class Country(DTO):
     flag: str
 
 
-@dataclass
+@dataclass(slots=True)
 class SubdivisionBasic:
     name: str
     geonames_code: str
@@ -40,7 +40,7 @@ class SubdivisionBasic:
     admin_level: int
 
 
-@dataclass
+@dataclass(slots=True)
 class Subdivision(DTO):
     id: int
     name: str
@@ -55,7 +55,7 @@ class Subdivision(DTO):
     parent_id: int | None
 
 
-@dataclass
+@dataclass(slots=True)
 class City(DTO):
     id: int
     geonames_id: int

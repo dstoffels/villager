@@ -1,5 +1,4 @@
 import villager
+from pympler import asizeof
 
-city = villager.cities.get(id=199)
-
-print(city)
+print(asizeof.asizeof(villager.subdivisions.cache))

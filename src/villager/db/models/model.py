@@ -35,6 +35,10 @@ class Model(Generic[TDTO], ABC):
         return self.dto_class(**data)
 
     @classmethod
+    def from_tuple(cls, data: tuple) -> TDTO:
+        cls.dto_class
+
+    @classmethod
     def create_table(cls) -> None:
         cls._create_fts()
         cls.db.commit()
