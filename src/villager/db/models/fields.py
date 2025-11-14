@@ -53,22 +53,22 @@ class Field(Generic[T], ABC):
         instance.__dict__[self.name] = value
 
     def __eq__(self, other):
-        return Expression(f"{self.name} MATCH ?", (f'"{other}"',))
+        return Expression(f"{self.name} = ?", (str(other),))
 
     def __ne__(self, other):
-        return Expression(f"{self.name} != ?", (other,))
+        return Expression(f"{self.name} != ?", (str(other),))
 
     def __lt__(self, other):
-        return Expression(f"{self.name} < ?", (other,))
+        return Expression(f"{self.name} < ?", (str(other),))
 
     def __le__(self, other):
-        return Expression(f"{self.name} <= ?", (other,))
+        return Expression(f"{self.name} <= ?", (str(other),))
 
     def __gt__(self, other):
-        return Expression(f"{self.name} > ?", (other,))
+        return Expression(f"{self.name} > ?", (str(other),))
 
     def __ge__(self, other):
-        return Expression(f"{self.name} >= ?", (other,))
+        return Expression(f"{self.name} >= ?", (str(other),))
 
     def like(self, pattern):
         return Expression(f"{self.name} LIKE ?", (pattern,))
