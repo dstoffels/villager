@@ -6,6 +6,14 @@ from villager.utils import normalize
 class CityRegistry(Registry[CityModel, City]):
     """Registry for cities"""
 
+    SEARCH_FIELD_WEIGHTS = {
+        "name": 1.5,
+        "alt_names": 0.9,
+        "admin1": 0.6,
+        "admin2": 0.6,
+        "country": 0.5,
+    }
+
     META_LOADED_KEY = "cities_loaded"
     META_URL_KEY = "cities_tsv_url"
 
@@ -16,13 +24,9 @@ class CityRegistry(Registry[CityModel, City]):
         self._meta = MetaStore()
         self._loaded = self._read_loaded_flag()
 
-        self.data_url = ""
-
-    osm_type_map = {
-        "way": "w",
-        "node": "n",
-        "relation": "r",
-    }
+    @property
+    def search_field_weights(self):
+        pass
 
     def _read_loaded_flag(self) -> bool:
         return self._meta.get(self.META_LOADED_KEY) == "1"

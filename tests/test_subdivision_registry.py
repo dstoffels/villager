@@ -61,4 +61,7 @@ class TestFilter:
         results = subdivisions.filter(alt_name=alt_name)
 
         assert len(results) > 0, "should return at least 1"
-        assert all(any(alt_name in name for name in r.alt_names) for r in results)
+        assert all(
+            any(alt_name in name or alt_name == name for name in r.alt_names)
+            for r in results
+        )

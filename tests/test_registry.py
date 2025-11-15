@@ -81,4 +81,4 @@ class TestSearch:
         subject = select_random(registry)
         results = registry.search(subject.name)
 
-        assert any(subject.name == r.name for r in results)
+        assert any(subject.name == r.name for r, score in results)

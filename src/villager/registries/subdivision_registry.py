@@ -13,6 +13,8 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
     fuzzy search by these keys, and filtering by country or country code.
     """
 
+    SEARCH_FIELD_WEIGHTS = {"name": 1.0, "alt_names": 1.0, "country": 0.5}
+
     def get(
         self,
         *,
@@ -57,6 +59,10 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
             kwargs["alt_names"] = alt_name
 
         return super().filter(query, name, limit, **kwargs)
+
+    @property
+    def search_field_weights(self):
+        pass
 
     def by_country(self, country_code) -> list[Subdivision]:
         """Fetch all subdivisions for a given country by code."""

@@ -32,7 +32,7 @@ class CountryModel(Model[Country]):
         **kwargs
     ):
         self.name = name
-        self.official_name = official_name
+        self.official_name = official_name or ""
         self.alpha2 = alpha2
         self.alpha3 = alpha3
         self.numeric = numeric

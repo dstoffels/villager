@@ -22,7 +22,7 @@ class CityModel(Model[City]):
     def to_dto(self) -> City:
 
         def parse_subdivision(raw_sub: str | None, lvl: int) -> SubdivisionBasic | None:
-            if raw_sub is not None:
+            if raw_sub:
                 name, geonames_code, iso_code = raw_sub.split("|")
                 return SubdivisionBasic(name, geonames_code, iso_code, lvl)
 
@@ -90,8 +90,8 @@ class CityModel(Model[City]):
     ):
         self.geonames_id = geonames_id
         self.name = name
-        self.admin1 = admin1 or None
-        self.admin2 = admin2 or None
+        self.admin1 = admin1 or ""
+        self.admin2 = admin2 or ""
         self.country = country or ""
         self.alt_names = alt_names or ""
         self.population = population
