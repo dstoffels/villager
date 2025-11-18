@@ -1,6 +1,7 @@
 from villager.registries.registry import Registry
 from villager.db import CityModel, City, MetaStore
-from villager.utils import normalize
+import requests
+import io
 
 
 class CityRegistry(Registry[CityModel, City]):
@@ -35,8 +36,6 @@ class CityRegistry(Registry[CityModel, City]):
         if self._loaded:
             print("Cities already loaded.")
             return
-        import requests
-        import io
 
         print("Loading Cities...")
         url = self._meta.get(self.META_URL_KEY)
@@ -50,8 +49,9 @@ class CityRegistry(Registry[CityModel, City]):
             tsv = io.StringIO(response.text)
             CityModel.load(tsv)
 
-            print(f"{self.count} cities loaded.")
             self._meta.set(self.META_LOADED_KEY, "1")
+            self._loaded = self._read_loaded_flag()
+            print(f"{self.count} cities loaded.")
 
         else:
             print("No download url availale for cities dataset")
@@ -62,11 +62,19 @@ class CityRegistry(Registry[CityModel, City]):
     def unload(self) -> None:
         if not self._loaded:
             print("No cities to unload.")
-            return
-        print(f"Removing {self.count} cities")
-        CityModel.drop()
-        self._meta.set(self.META_LOADED_KEY, "0")
-        print("Cities unloaded from db.")
+        else:
+            print(f"Removing {self.count} cities")
+            CityModel.drop()
+            self._meta.set(self.META_LOADED_KEY, "0")
+            self._loaded = self._read_loaded_flag()
+            self._count = None
+
+            print("Cities unloaded from db.")
+
+    @property
+    def count(self):
+        self._ensure_loaded()
+        return super().count
 
     def _ensure_loaded(self):
         if not self._loaded:
@@ -116,30 +124,6 @@ class CityRegistry(Registry[CityModel, City]):
 
         return super().filter(query, name, limit, **kwargs)
 
-    # def filter(
-    #     self,
-    #     name: str,
-    #     country=None,
-    #     subdivision: str = None,
-    #     **kwargs,
-    # ) -> list[City]:
-    #     """Lookup cities by exact name, optionally filtered by country and/or subdivision."""
-    #     if not name:
-    #         return []
-
-    #     norm_q = normalize(name)
-    #     if country:
-    #         norm_q += f" {country}"
-    #     if subdivision:
-    #         norm_q += f" {subdivision}"
-
-    #     rows = self._model_cls.fts_match(norm_q, exact_match=True)
-    #     return [r.dto for r in rows]
-
-    def _sort_matches(self, matches: list, limit: int) -> list[City]:
-        return [
-            (row_data.dto, score)
-            for row_data, score in sorted(
-                matches, key=lambda r: (r[1], r[0].dto.population or 0), reverse=True
-            )[:limit]
-        ]
+    def search(self, query, limit=None, **kwargs):
+        self._ensure_loaded()
+        return super().search(query, limit, **kwargs)

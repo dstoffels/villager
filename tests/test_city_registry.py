@@ -16,15 +16,38 @@ class TestLoading:
             cities._loaded = True  # or this!
             assert e
 
+    # def test_unload(self):
+    #     """should drop cities table and throw Runtime Error if cities is accessed"""
+    #     if not cities._loaded:
+    #         cities.load()
+
+    #     cities.unload()
+
+    #     assert cities._loaded == False
+
+    #     e = None
+    #     try:
+    #         cities.count == 0
+    #     except RuntimeError as e:
+    #         assert e
+    #         return
+    #     assert False, "Should throw runtime error"
+
+    # def test_load(self):
+    #     """should download, create cities table and ingest fixture"""
+
+    #     if cities._loaded:
+    #         cities.unload()
+
+    #     cities.load()
+
+    #     assert cities._loaded
+    #     assert cities.count > 0
+
 
 @pytest.fixture
 def city() -> City:
     return select_random(cities)
-
-
-@pytest.fixture(scope="session")
-def enable():
-    cities.enable()
 
 
 class TestGet:
