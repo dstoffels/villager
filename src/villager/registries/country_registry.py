@@ -1,9 +1,5 @@
 from villager.registries.registry import Registry
 from villager.db import CountryModel, Country
-from villager.db.models.fields import Expression
-
-# from villager.literals import CountryCode, CountryName, CountryNumeric
-from villager.utils import normalize
 
 
 class CountryRegistry(Registry[CountryModel, Country]):
@@ -14,9 +10,11 @@ class CountryRegistry(Registry[CountryModel, Country]):
     and fuzzy search.
     """
 
-    def __init__(self, model_cls):
-        super().__init__(model_cls)
-        self._addl_search_attrs = ["alpha2", "alpha3"]
+    SEARCH_FIELD_WEIGHTS = {
+        "name": 1.0,
+        "official_name": 0.5,
+        "alt_names": 0.4,
+    }
 
     def get(
         self,

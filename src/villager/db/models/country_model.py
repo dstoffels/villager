@@ -1,7 +1,6 @@
-from .model import Model
-from .fields import CharField, IntField
-from ..dtos import Country
-from dataclasses import dataclass
+from villager.db.models.model import Model
+from villager.db.models.fields import CharField, IntField
+from villager.dtos import Country
 
 
 class CountryModel(Model[Country]):
@@ -33,7 +32,7 @@ class CountryModel(Model[Country]):
         **kwargs
     ):
         self.name = name
-        self.official_name = official_name
+        self.official_name = official_name or ""
         self.alpha2 = alpha2
         self.alpha3 = alpha3
         self.numeric = numeric

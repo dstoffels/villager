@@ -1,19 +1,11 @@
-from villager.db import db, CountryModel, SubdivisionModel, CityModel
+from villager.db import db, CountryModel, SubdivisionModel, CityModel, MetaStore
+from villager.utils import clean_row, chunked
 import csv
 from pathlib import Path
 import zipfile
 import argparse
 
 DATA_DIR = Path(__file__).parent
-
-
-def chunked(list: list, size: int):
-    for i in range(0, len(list), size):
-        yield list[i : i + size]
-
-
-def clean_row(row: dict[str, str]) -> dict[str, str | None]:
-    return {k: (v if v.strip() != "" else None) for k, v in row.items()}
 
 
 def ingest_countries() -> None:
@@ -55,21 +47,9 @@ def ingest_subdivisions() -> None:
 
 
 def ingest_cities() -> None:
-    cities: list[dict] = []
+    db.create_tables([CityModel])
     with open(DATA_DIR / "cities/cities.tsv", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            MAX_DIGITS = 9
-            row["population"] = f"{int(row['population']):0{MAX_DIGITS}d}"
-            cities.append(clean_row(row))
-
-    with db.atomic():
-        for batch in chunked(list(cities), 1000):
-            try:
-                CityModel.insert_many(batch)
-            except Exception as e:
-                print(f"Unexpected error on batch: {e}")
-                raise e
+        CityModel.load(f)
 
 
 def compress_db(db_path: str | Path) -> Path:
@@ -90,14 +70,15 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    db.nuke()
-    db.create_tables([CountryModel, SubdivisionModel, CityModel])
+    db.drop_tables([CountryModel, SubdivisionModel, CityModel])
+    MetaStore.create_table()
+    db.create_tables([CountryModel, SubdivisionModel])
     ingest_countries()
     ingest_subdivisions()
     if args.full:
         ingest_cities()
+
     db.vacuum()
-    # compress_db(db.db_path)
 
 
 if __name__ == "__main__":

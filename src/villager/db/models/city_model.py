@@ -1,7 +1,8 @@
-from .model import Model
-from .fields import CharField, IntField, FloatField
-from ..dtos import SubdivisionBasic, City
-from dataclasses import dataclass
+from villager.db.models.model import Model
+from villager.db.models.fields import CharField, IntField, FloatField
+from villager.dtos import SubdivisionBasic, City
+from villager.utils import clean_row, chunked
+import csv
 
 
 class CityModel(Model[City]):
@@ -21,7 +22,7 @@ class CityModel(Model[City]):
     def to_dto(self) -> City:
 
         def parse_subdivision(raw_sub: str | None, lvl: int) -> SubdivisionBasic | None:
-            if raw_sub is not None:
+            if raw_sub:
                 name, geonames_code, iso_code = raw_sub.split("|")
                 return SubdivisionBasic(name, geonames_code, iso_code, lvl)
 
@@ -32,7 +33,7 @@ class CityModel(Model[City]):
 
         # parse country
         country_parts = self.country.split("|")
-        country = country_parts[0]
+        country = country_parts[0] if country_parts else None
         alpha2 = country_parts[1] if len(country_parts) > 1 else None
         alpha3 = country_parts[2] if len(country_parts) > 2 else None
 
@@ -49,11 +50,30 @@ class CityModel(Model[City]):
             country=country,
             country_alpha2=alpha2,
             country_alpha3=alpha3,
-            alt_names=self.alt_names.split("|"),
+            alt_names=self.alt_names.split("|") if self.alt_names else [],
             population=int(self.population),
             lat=float(self.lat),
             lng=float(self.lng),
         )
+
+    @classmethod
+    def load(cls, file):
+        cls.db.create_tables([CityModel])
+        cities: list[dict] = []
+        reader = csv.DictReader(file, delimiter="\t")
+
+        for row in reader:
+            MAX_DIGITS = 9
+            row["population"] = f"{int(row['population']):0{MAX_DIGITS}d}"
+            cities.append(clean_row(row))
+
+        with cls.db.atomic():
+            for batch in chunked(list(cities), 1000):
+                try:
+                    cls.insert_many(batch)
+                except Exception as e:
+                    print(f"Unexpected error on batch: {e}")
+                    raise e
 
     def __init__(
         self,
@@ -66,13 +86,13 @@ class CityModel(Model[City]):
         population: int,
         lat: float,
         lng: float,
-        **kwargs
+        **kwargs,
     ):
         self.geonames_id = geonames_id
         self.name = name
-        self.admin1 = admin1
-        self.admin2 = admin2
-        self.country = country
+        self.admin1 = admin1 or ""
+        self.admin2 = admin2 or ""
+        self.country = country or ""
         self.alt_names = alt_names or ""
         self.population = population
         self.lat = lat

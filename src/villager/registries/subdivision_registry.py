@@ -1,9 +1,6 @@
-from .registry import Registry
-from ..db.dtos import Subdivision
-from typing import Callable, Optional
-from ..db import SubdivisionModel, CountryModel
-
-# from ..literals import CountryCode, CountryName, CountryNumeric
+from villager.registries.registry import Registry
+from villager.dtos import Subdivision
+from villager.db import SubdivisionModel, CountryModel
 from rapidfuzz import fuzz
 from villager.utils import normalize
 
@@ -15,6 +12,8 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
     Supports exact lookup by ISO code, alpha2, or country code,
     fuzzy search by these keys, and filtering by country or country code.
     """
+
+    SEARCH_FIELD_WEIGHTS = {"name": 1.0, "alt_names": 0.4, "country": 0.33}
 
     def get(
         self,
@@ -60,6 +59,10 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
             kwargs["alt_names"] = alt_name
 
         return super().filter(query, name, limit, **kwargs)
+
+    @property
+    def search_field_weights(self):
+        pass
 
     def by_country(self, country_code) -> list[Subdivision]:
         """Fetch all subdivisions for a given country by code."""

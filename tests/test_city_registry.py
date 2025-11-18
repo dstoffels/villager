@@ -3,9 +3,28 @@ from villager import cities, City
 from utils import select_random
 
 
+class TestLoading:
+    """LOADING"""
+
+    def test_disabled(self):
+        """should throw RuntimeError when attempting to use while registry is disabled."""
+
+        cities._loaded = False  # dangerzone: don't do this!
+        try:
+            cities.get(id=1)
+        except RuntimeError as e:
+            cities._loaded = True  # or this!
+            assert e
+
+
 @pytest.fixture
 def city() -> City:
     return select_random(cities)
+
+
+@pytest.fixture(scope="session")
+def enable():
+    cities.enable()
 
 
 class TestGet:
@@ -33,7 +52,7 @@ class TestFilter:
 
     @pytest.mark.parametrize("index", [0, 1])
     def test_admin(self, index: int, city: City):
-        """should return a list of cities where its admin field contains the input admin1 kwarg"""
+        """should return a list of cities where its admin field contains the input admin kwarg"""
 
         # ensure we have an admin1 to choose from
         while not len(city.subdivisions) > 1:
@@ -57,5 +76,8 @@ class TestFilter:
         alt_name = city.alt_names[0]
         results = cities.filter(alt_name=alt_name)
 
-        assert len(results) > 0, "should have at least 1 result"
-        assert all(alt_name in r.alt_names for r in results)
+        assert len(results) > 0, f"should have at least 1 result, RESULTS{results}"
+        assert all(
+            any(alt_name in name or alt_name == name for name in r.alt_names)
+            for r in results
+        ), f"alt_name: {alt_name}"

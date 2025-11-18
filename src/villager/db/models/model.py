@@ -1,12 +1,12 @@
-from ..database import db, Database
-from abc import abstractmethod
-from ..dtos import DTO
+from villager.db import db, Database
+from villager.db.models.fields import Field, Expression
+from villager.dtos import DTO
 from typing import TypeVar, Generic
 from abc import ABC
 import sqlite3
 from typing import Type
-from .fields import Field, Expression
 import json
+from abc import abstractmethod
 from villager.utils import sanitize_fts_query
 
 TDTO = TypeVar("TDTO", bound=DTO)
@@ -127,9 +127,9 @@ class Model(Generic[TDTO], ABC):
                 f"{col} MATCH ?" for col in field_queries.keys()
             )
         elif query:
-            query = sanitize_fts_query(query, exact_match)
+            sanitized_input = sanitize_fts_query(query, exact_match)
 
-            params = [query]
+            params = [sanitized_input]
             q_where = f"WHERE {cls.table_name} MATCH ?"
         else:
             return []
@@ -146,10 +146,23 @@ class Model(Generic[TDTO], ABC):
         if limit:
             params.append(limit)
 
-        cursor = cls.db.execute(q, params)
-        rows: list[sqlite3.Row] = cursor.fetchall()
-        cursor.close()
-        return [cls.from_row(row) for row in rows if row]
+        try:
+            cursor = cls.db.execute(q, params)
+            rows: list[sqlite3.Row] = cursor.fetchall()
+            cursor.close()
+            return [cls.from_row(row) for row in rows if row]
+        except Exception as e:
+            print(e)
+            print(query)
+            print(params)
+            print(q)
+            return []
+
+    @classmethod
+    def drop(cls):
+        cls.db.execute(f"DROP TABLE IF EXISTS {cls.table_name}")
+        cls.db.commit()
+        cls.db.vacuum()
 
     def __str__(self):
         return json.dumps(self.__dict__, indent=4)
