@@ -4,7 +4,7 @@ from villager.utils import normalize
 
 
 class FuzzySearch(SearchBase):
-    NOISE_THRESHOLD = 0.5
+    NOISE_THRESHOLD = 0.6
 
     def score_candidate(self, candidate):
         score = 0.0
@@ -13,7 +13,10 @@ class FuzzySearch(SearchBase):
         for field, weight in self.field_weights.items():
             value = getattr(candidate, field, "")
             if value:
-                field_score = fuzz.ratio(value, self.query) / 100
+                if "|" in value:
+                    field_score = fuzz.partial_token_sort_ratio(value, self.query) / 100
+                else:
+                    field_score = fuzz.token_set_ratio(value, self.query) / 100
 
                 # # Filter noise
                 if field_score >= self.NOISE_THRESHOLD:

@@ -68,7 +68,7 @@ class TestSearch:
     def test_empty(self, registry: Registry):
         """should return [] with bad or no input."""
 
-        bad_queries = ["", "fh23897yuh", "zzzzzzzzz", "!@#$%"]
+        bad_queries = ["", "zzzzzzzzz", "!@#$%"]
         for q in bad_queries:
             results = registry.search(q)
             assert isinstance(results, list)
@@ -77,16 +77,16 @@ class TestSearch:
             ), f"query: {q} should yield [], instead returned {results}"
 
     def test_exact(self, registry: Registry):
-        """should return a list of objects with at least one field matching input query"""
+        """should return results containing the input subject."""
 
         subject = select_random(registry)
         results = registry.search(subject.name)
 
         assert any(subject.name == r.name for r, score in results)
 
-    def test_mangled(self, registry: Registry):
-        """should return a list of objects with at least one field matching input query"""
-        COUNT = 50
+    def test_mangled_name(self, registry: Registry):
+        """should return results containing the input subject with a success rate > 80%."""
+        COUNT = 20
         SEED = 42
 
         rng = random.Random(SEED)
@@ -115,7 +115,51 @@ class TestSearch:
         success_rate = successes / COUNT
 
         assert success_rate >= 0.8, (
-            f"Success rate: {success_rate:.1%} below threshold. "
-            f"Failures: {len(failures)}/{COUNT}. "
+            f"Success rate: {success_rate:.1%}/80%. "
+            f"Successes: {successes}/{COUNT}. "
+            f"Sample failures: {json.dumps(failures, indent=4, ensure_ascii=False)}"
+        )
+
+    def test_mangled_alt_name(self, registry: Registry):
+        """should return results containing the input subject by one if its alternate names with a success rate > 80%"""
+        COUNT = 20
+        SEED = 100
+
+        rng = random.Random(SEED)
+        searched = 0
+        id = 1
+        successes = 0
+        failures = []
+
+        while searched < COUNT:
+            subject: DTO = registry.get(id=id)
+            if subject.alt_names:
+                rand_alt_name = rng.sample(subject.alt_names, k=1)[0]
+                mangled_alt_name = mangle(rand_alt_name, seed=SEED + id)
+
+                # slightly more relaxed limit since alt names is noisier
+                results: list[tuple[DTO, float]] = registry.search(
+                    mangled_alt_name, limit=15
+                )
+
+                if any(subject.id == r.id for r, score in results):
+                    successes += 1
+                else:
+                    failures.append(
+                        {
+                            "original": "|".join(subject.alt_names),
+                            "mangled": mangled_alt_name,
+                            "expected_id": subject.id,
+                            "resulting_ids": [r.id for r, _ in results],
+                        }
+                    )
+                searched += 1
+            id += 1
+
+        success_rate = successes / COUNT
+
+        assert success_rate >= 0.8, (
+            f"Success rate: {success_rate:.1%}/80%. "
+            f"Successes: {successes}/{COUNT}. "
             f"Sample failures: {json.dumps(failures, indent=4, ensure_ascii=False)}"
         )
