@@ -6,24 +6,27 @@ from abc import abstractmethod, ABC
 from concurrent.futures import ThreadPoolExecutor
 
 
-class SearchBase(ABC):
+class SearchEngine(ABC):
     MAX_ITERATIONS = 8
     MIN_TOKEN_LEN = 1
     MATCH_THRESHOLD = 0.6
     STRONG_MATCH_THRESHOLD = 0.85
-    FTS_HARD_LIMIT = 5000
+    FTS_HARD_LIMIT = 2000
+    WORKERS = 8
 
     def __init__(
         self,
         query: str,
         model_cls: type[Model],
         field_weights: dict[str, float],
+        order_fields: list[str],
         limit: int = None,
     ):
-        self.query: str = query
+        self.query: str = query.lower()
         self.tokens = self.query.split()
         self.model_cls: type[Model] = model_cls
         self.field_weights: dict[str, float] = field_weights
+        self.order_fields: list[str] = order_fields
         self.limit: int | None = limit
 
         self._max_score = sum(field_weights.values())
@@ -64,7 +67,7 @@ class SearchBase(ABC):
 
         fts_q = " ".join(self.tokens)
 
-        order_by = ["rank"] if i == self._iterations else []
+        order_by = ["rank"] if exact or i == self._iterations else []
 
         return self.model_cls.fts_match(
             fts_q, exact_match=exact, limit=limit, order_by=order_by
@@ -116,9 +119,8 @@ class SearchBase(ABC):
 
     @property
     def results(self) -> list[tuple[DTO, float]]:
-        # TODO: supplement with weak matches if len(strong_matches) < limit
         return sorted(
             [(m.to_dto(), score) for m, score in self._matches.items()],
-            key=lambda x: x[1],
+            key=lambda x: (x[1], *[getattr(x[0], f) for f in self.order_fields]),
             reverse=True,
         )[: self.limit]

@@ -80,7 +80,7 @@ class TestSearch:
         """should return results containing the input subject."""
 
         subject = select_random(registry)
-        results = registry.search(subject.name)
+        results = registry.search(subject.name, limit=10)
 
         assert any(subject.name == r.name for r, score in results)
 
@@ -134,7 +134,7 @@ class TestSearch:
         while searched < COUNT:
             subject: DTO = registry.get(id=id)
             if subject.alt_names:
-                rand_alt_name = rng.sample(subject.alt_names, k=1)[0]
+                rand_alt_name = random.Random(SEED).choice(subject.alt_names)
                 mangled_alt_name = mangle(rand_alt_name, seed=SEED + id)
 
                 # slightly more relaxed limit since alt names is noisier

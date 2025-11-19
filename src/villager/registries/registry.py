@@ -13,7 +13,8 @@ TDTO = TypeVar("TDTO", bound=DTO)
 class Registry(Generic[TModel, TDTO], ABC):
     """Abstract base registry class defining interface for lookup and search."""
 
-    SEARCH_FIELD_WEIGHTS = {}
+    SEARCH_FIELD_WEIGHTS: dict[str, float] = {}
+    SEARCH_ORDER_FIELDS: list[str] = []
     """Override to provide the fields for search scoring."""
 
     def __init__(self, model_cls: Type[TModel]):
@@ -72,7 +73,13 @@ class Registry(Generic[TModel, TDTO], ABC):
         if not query:
             return []
 
-        search = FuzzySearch(query, self._model_cls, self.SEARCH_FIELD_WEIGHTS, limit)
+        search = FuzzySearch(
+            query,
+            self._model_cls,
+            self.SEARCH_FIELD_WEIGHTS,
+            self.SEARCH_ORDER_FIELDS,
+            limit,
+        )
 
         return search.run()
 

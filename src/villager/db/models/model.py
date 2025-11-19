@@ -118,6 +118,7 @@ class Model(Generic[TDTO], ABC):
         exact_match: bool = True,
         order_by: list[str] = [],
         limit: int = None,
+        offset: int = None,
     ):
         if field_queries:
             params = list(prep_tokens(q, exact_match) for q in field_queries.values())
@@ -138,13 +139,19 @@ class Model(Generic[TDTO], ABC):
 
         q_limit = "LIMIT ?" if limit is not None else ""
 
+        q_offset = f"OFFSET ?" if offset is not None else ""
+
         q = f"""SELECT rowid as id, *{bm25} FROM {cls.table_name}
                     {q_where}
                     {q_order_by}
-                    {q_limit}"""
+                    {q_limit}
+                    {q_offset}"""
 
         if limit:
             params.append(limit)
+
+        if offset:
+            params.append(offset)
 
         cursor = cls.db.execute(q, params)
         rows: list[sqlite3.Row] = cursor.fetchall()

@@ -660,5 +660,47 @@
             "avg_hit_score": 0.881
         },
         "report": "Removed break in score_candidates (base), removed early exit for new matches"
+    },
+    "2025-11-18T14:48:50.149311": {
+        "iterations": 3,
+        "sample_size": 300,
+        "notes": "",
+        "countries": {
+            "success_rate": 0.996,
+            "avg_time_ms": 0.275,
+            "avg_hit_score": 0.843
+        },
+        "subdivisions": {
+            "success_rate": 0.936,
+            "avg_time_ms": 30.504,
+            "avg_hit_score": 0.846
+        },
+        "cities": {
+            "success_rate": 0.794,
+            "avg_time_ms": 99.243,
+            "avg_hit_score": 0.85
+        },
+        "report": "Added additional searches to inner loop for alt_names if they exist on the subject, randomly selecting 1, mangling and searching. 10% hit to success rate, but we also bumped the noise threshold up to 60%."
+    },
+    "2025-11-18T15:34:52.201054": {
+        "iterations": 3,
+        "sample_size": 300,
+        "notes": "lowered noise threshold to 0.5",
+        "countries": {
+            "success_rate": 0.992,
+            "avg_time_ms": 0.292,
+            "avg_hit_score": 0.81
+        },
+        "subdivisions": {
+            "success_rate": 0.912,
+            "avg_time_ms": 35.371,
+            "avg_hit_score": 0.831
+        },
+        "cities": {
+            "success_rate": 0.773,
+            "avg_time_ms": 127.336,
+            "avg_hit_score": 0.829
+        },
+        "report": ""
     }
 }

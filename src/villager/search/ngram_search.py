@@ -1,10 +1,10 @@
-from villager.search.search_base import SearchBase
+from villager.search.search_engine import SearchEngine
 from villager.db import Model
 from villager.utils import normalize
 from villager.dtos import DTO
 
 
-class NgramSearch(SearchBase):
+class NgramSearch(SearchEngine):
     SCORE_THRESHOLD = 0.5
     NGRAM_LEN = 2
 

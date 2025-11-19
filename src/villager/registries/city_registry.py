@@ -9,11 +9,13 @@ class CityRegistry(Registry[CityModel, City]):
 
     SEARCH_FIELD_WEIGHTS = {
         "name": 1.0,
-        "alt_names": 1.0,
-        "admin1": 0.3,
+        "alt_names": 1.5,
+        "admin1": 0.2,
         "admin2": 0.1,
         "country": 0.2,
     }
+
+    SEARCH_ORDER_FIELDS = ["population"]
 
     META_LOADED_KEY = "cities_loaded"
     META_URL_KEY = "cities_tsv_url"
