@@ -1,6 +1,6 @@
 from villager.registries.registry import Registry
 from villager.dtos import Subdivision
-from villager.db import SubdivisionModel, CountryModel
+from villager.data import SubdivisionModel, CountryModel
 from rapidfuzz import fuzz
 import villager
 

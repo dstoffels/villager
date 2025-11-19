@@ -1,8 +1,10 @@
 from villager.registries.registry import Registry
-from villager.db import CityModel, City, MetaStore
+from villager.data import CityModel, City, MetaStore, db
 import requests
 import io
 import villager
+import typer
+import os
 
 
 class CityRegistry(Registry[CityModel, City]):
@@ -20,7 +22,6 @@ class CityRegistry(Registry[CityModel, City]):
 
     SEARCH_ORDER_FIELDS = ["population"]
 
-    META_LOADED_KEY = "cities_loaded"
     META_URL_KEY = "cities_tsv_url"
 
     def __init__(self, model_cls):
@@ -28,67 +29,115 @@ class CityRegistry(Registry[CityModel, City]):
         self._order_by = "population DESC"
 
         self._meta = MetaStore()
-        self._loaded = self._read_loaded_flag()
+        self._loaded = False
+        """WARNING: Do not mutate directly, controlled by set_loaded()"""
+        self.set_loaded()
 
-    @property
-    def search_field_weights(self):
-        pass
+    def set_loaded(self) -> bool:
+        self._loaded = db.CONFIG_FILE.exists()
 
-    def _read_loaded_flag(self) -> bool:
-        return self._meta.get(self.META_LOADED_KEY) == "1"
-
-    def load(self) -> None:
+    def load(self, confirmed: bool = False, custom_dir: str = "") -> None:
         if self._loaded:
-            print("Cities already loaded.")
+            print("Cities data already loaded.")
             return
 
-        print("Loading Cities...")
+        # USER CONFIRMATION
+        confirmed = confirmed or typer.confirm(
+            "Loading cities is HEAVY, there are nearly half a million entries and it expands the database to ~200MB. Proceeding with load will copy the sqlite database to your project root, download cities.tsv and load it into the copied database and update your .gitignore. Are you sure you want to proceed?"
+        )
+
+        # DID NOT CONFIRM
+        if not confirmed:
+            typer.echo("Aborting load.")
+            raise typer.Exit()
+
+        # COPY DATABASE
+        typer.echo(f"Copying database to {custom_dir}/{db.FILENAME}...")
+        path = db.copy_to(custom_dir)
+        db.set_db_path(path)
+
+        # UPDATE GITIGNORE
+        typer.echo(f"Updating .gitignore...")
+
+        gitignore_path = ".gitignore"
+
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, "r") as f:
+                existing_content = f.read()
+                if db.FILENAME in existing_content:
+                    typer.echo("Database already in .gitignore. Skipping...")
+        else:
+            existing_content = ""
+
+        with open(gitignore_path, "a") as f:
+            if existing_content and not existing_content.endswith("\n"):
+                f.write("\n")
+            f.write(db.FILENAME)
+
+        # DOWNLOAD TSV FIXTURE
         url = self._meta.get(self.META_URL_KEY)
         if url:
-            print("Downloading TSV fixture...")
+            typer.echo("Downloading TSV fixture...")
 
-            response = requests.get(url)
-            response.raise_for_status()
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # just to be safe
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    e.add_note(
+                        f"There is a problem with the cities.tsv url, please raise a new issue: https://github.com/dstoffels/villager/issues.\nurl: {url}"
+                    )
+                raise e
 
-            print("TSV fixture downloaded, loading into database...")
+            # LOAD TSV INTO DATABASE
+            typer.echo("TSV fixture downloaded, loading cities into database...")
             tsv = io.StringIO(response.text)
             CityModel.load(tsv)
 
-            self._meta.set(self.META_LOADED_KEY, "1")
-            self._loaded = self._read_loaded_flag()
-            print(f"{self.count} cities loaded.")
+            self.set_loaded()
+            typer.echo(f"{self.count} cities loaded.")
+            typer.echo(
+                "Run 'villager unload cities' in the CLI or 'villager.cities.unload()' to revert."
+            )
 
         else:
-            print("No download url availale for cities dataset")
-            print(
-                "Check for the latest cities.tsv at https://github.com/dstoffels/villager"
+            raise ValueError(
+                f"Error fetching the cities fixture url, the database (meta table) may have been corrupted. Please submit a new issue: https://github.com/dstoffels/villager/issues.\nCurrent url: {url}"
             )
 
     def unload(self) -> None:
         if not self._loaded:
-            print("No cities to unload.")
+            typer.echo("No cities to unload.")
         else:
-            print(f"Removing {self.count} cities")
-            CityModel.drop()
-            self._meta.set(self.META_LOADED_KEY, "0")
-            self._loaded = self._read_loaded_flag()
-            self._count = None
+            # UNLOAD FILES
+            typer.echo(f"Removing database and villager.conf...")
+            db.revert_to_default()
+            typer.echo("Files removed.")
 
-            print("Cities unloaded from db.")
+            # UPDATE GITIGNORE
+            typer.echo("Updating .gitignore...")
+            with open(".gitignore", "r+") as f:
+                content = f.read()
+                content = content.replace(db.FILENAME, "")
+                f.write(content)
+
+            self.set_loaded()
+            self._count = None
+            typer.echo("Cities successfully unloaded from db.")
 
     @property
     def count(self):
-        self._ensure_loaded()
+        self._check_loaded()
         return super().count
 
-    def _ensure_loaded(self):
+    def _check_loaded(self):
         if not self._loaded:
             raise RuntimeError(
                 "Cities data not yet loaded. Load with `villager.cities.load()` or `villager load cities` from the CLI."
             )
 
     def get(self, *, id: int = None, geonames_id: str = None, **kwargs):
-        self._ensure_loaded()
+        self._check_loaded()
         cls = self._model_cls
 
         field_map = {
@@ -115,7 +164,7 @@ class CityRegistry(Registry[CityModel, City]):
         alt_name: str = None,
         **kwargs,
     ):
-        self._ensure_loaded()
+        self._check_loaded()
         if kwargs:
             return []
         if admin1:
@@ -130,7 +179,7 @@ class CityRegistry(Registry[CityModel, City]):
         return super().filter(query, name, limit, **kwargs)
 
     def search(self, query, limit=None, **kwargs):
-        self._ensure_loaded()
+        self._check_loaded()
         return super().search(query, limit, **kwargs)
 
     def for_country(
@@ -144,6 +193,7 @@ class CityRegistry(Registry[CityModel, City]):
         population__gt: int | None = None,
         **kwargs,
     ) -> list[City]:
+        self._check_loaded()
         if population__gt is not None and population__lt is not None:
             raise ValueError("population__gt and population__lt are mutually exclusive")
 
@@ -179,6 +229,7 @@ class CityRegistry(Registry[CityModel, City]):
         population__gt: int | None = None,
         **kwargs,
     ) -> list[City]:
+        self._check_loaded()
         if population__gt is not None and population__lt is not None:
             raise ValueError("population__gt and population__lt are mutually exclusive")
 

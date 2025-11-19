@@ -1,5 +1,5 @@
-from villager.db import db, Database
-from villager.db.models.fields import Field, Expression
+from villager.data import db, Database
+from villager.data.models.fields import Field, Expression
 from villager.dtos import DTO
 from typing import TypeVar, Generic
 from abc import ABC

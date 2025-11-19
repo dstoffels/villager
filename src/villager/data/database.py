@@ -4,12 +4,14 @@ from contextlib import contextmanager
 import sqlite3
 from importlib import resources
 import shutil
-import tempfile
 from pathlib import Path
 
 
 class Database:
     MAX_PREFIX = 24
+    PATH = "villager.data"
+    FILENAME = "villager.db"
+    CONFIG_FILE = Path.cwd() / ".villager.conf"
 
     def __init__(self, db_path: str = None):
         self.db_path: str = db_path or self.get_db_path()
@@ -56,6 +58,17 @@ class Database:
         except Exception:
             self._conn.rollback()
             raise
+
+    @classmethod
+    def copy_to(cls, dir: str = None, filename: str = FILENAME) -> str:
+        """Copy the database to current working directory, returning the new path."""
+        path = Path(dir) if dir else Path.cwd()
+        target_path = path / filename
+
+        with resources.path(cls.PATH, cls.FILENAME) as db_file:
+            shutil.copy(db_file, target_path)
+
+        return str(target_path)
 
     def execute(self, query: str, params: Tuple | Dict = ()) -> sqlite3.Cursor:
         """Execute a single query"""
@@ -127,12 +140,32 @@ class Database:
         """Analyze database for query optimization"""
         return self.execute("ANALYZE")
 
+    def set_db_path(self, path: str) -> None:
+        """Stores the database path in a config file for external storage and reloads the connection with the new path."""
+        self.CONFIG_FILE.write_text(path)
+        self.close()
+        self.db_path = path
+        self._setup_conn()
+
     @classmethod
     def get_db_path(cls) -> str:
-        with resources.path("villager.db", "villager.db") as db_file:
-            temp_path = Path(tempfile.gettempdir()) / "villager.db"
-            shutil.copy(db_file, temp_path)
-            return str(temp_path)
+        """Fetches the database path from config or defaults to the bundled .db file."""
+        if cls.CONFIG_FILE.exists():
+            return cls.CONFIG_FILE.read_text().strip()
+
+        from importlib.resources import files
+
+        db_file = files(cls.PATH) / cls.FILENAME
+        return str(db_file)
+
+    def revert_to_default(self):
+        """Removes config file, external database and reverts to the bundled db file."""
+        self.close()
+        self.CONFIG_FILE.unlink()
+        db_file = Path(self.db_path)
+        db_file.unlink()
+        self.db_path = self.get_db_path()
+        self._setup_conn()
 
 
 db = Database()

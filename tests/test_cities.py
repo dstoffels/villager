@@ -1,6 +1,14 @@
 import pytest
+import warnings
 from villager import cities, City, countries, subdivisions
 from utils import select_random
+
+
+@pytest.fixture(autouse=True)
+def test_load_warning():
+    if not cities._loaded:
+        warnings.warn("Cities not loaded, test cancelled")
+        pytest.skip("Cities not loaded, test cancelled")
 
 
 class TestLoading:
@@ -8,13 +16,16 @@ class TestLoading:
 
     def test_disabled(self):
         """should throw RuntimeError when attempting to use while registry is disabled."""
-
-        cities._loaded = False  # dangerzone: don't do this!
+        loaded = cities._loaded
+        if loaded:
+            cities._loaded = False  # dangerzone: don't do this!
         try:
             cities.get(id=1)
         except RuntimeError as e:
-            cities._loaded = True  # or this!
+            cities._loaded = loaded  # return to previous state
             assert e
+            return
+        assert False, "Error not thrown"
 
     # def test_unload(self):
     #     """should drop cities table and throw Runtime Error if cities is accessed"""

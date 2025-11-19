@@ -1,5 +1,5 @@
-from villager.db.models.model import Model
-from villager.db.models.fields import CharField, IntField, FloatField
+from villager.data.models.model import Model
+from villager.data.models.fields import CharField, IntField, FloatField
 from villager.dtos import SubdivisionBasic, City
 from villager.utils import clean_row, chunked
 import csv

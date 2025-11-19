@@ -1,6 +1,6 @@
 # Search Engine for registries.
 
-from villager.db import Model
+from villager.data import Model
 from villager.dtos import DTO
 from abc import abstractmethod, ABC
 from concurrent.futures import ThreadPoolExecutor

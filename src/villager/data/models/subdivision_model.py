@@ -1,5 +1,5 @@
-from villager.db.models.model import Model
-from villager.db.models.fields import CharField
+from villager.data.models.model import Model
+from villager.data.models.fields import CharField
 from villager.dtos import Subdivision
 
 

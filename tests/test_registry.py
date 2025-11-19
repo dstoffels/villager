@@ -5,6 +5,15 @@ from villager.dtos import DTO
 from utils import select_random, mangle
 import random
 import json
+import warnings
+
+
+@pytest.fixture(autouse=True)
+def test_load_warning():
+    if not cities._loaded:
+        warnings.warn("Cities not loaded, test cancelled")
+        pytest.skip("Cities not loaded, test cancelled")
+
 
 REGISTRIES = [countries, subdivisions, cities]
 

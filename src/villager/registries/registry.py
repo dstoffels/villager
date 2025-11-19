@@ -1,7 +1,7 @@
 from typing import Iterator, Generic, TypeVar
 from abc import ABC
 from typing import Type
-from villager.db import DTO, Model
+from villager.data import DTO, Model
 from villager.search import FuzzySearch
 
 TModel = TypeVar("TModel", bound=Model)
