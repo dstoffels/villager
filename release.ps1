@@ -14,18 +14,10 @@ if ($versionPart -eq 'revert') {
     
     Write-Host "Current version: $tag"
     
-    # Delete remote tag and release
-    Write-Host "Deleting remote tag and release..."
-    git push origin --delete $tag 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Remote tag deleted" -ForegroundColor Green
-    } else {
-        Write-Host "Remote tag not found or already deleted" -ForegroundColor Yellow
-    }
-    
     # Delete GitHub release using gh CLI (if available)
     $ghInstalled = Get-Command gh -ErrorAction SilentlyContinue
     if ($ghInstalled) {
+        Write-Host "Deleting GitHub release..."
         gh release delete $tag -y 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Host "GitHub release deleted" -ForegroundColor Green
@@ -34,6 +26,15 @@ if ($versionPart -eq 'revert') {
         }
     } else {
         Write-Host "GitHub CLI not installed. Manually delete release at: https://github.com/dstoffels/localis/releases" -ForegroundColor Yellow
+    }
+    
+    # Delete remote tag
+    Write-Host "Deleting remote tag..."
+    git push origin --delete $tag 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Remote tag deleted" -ForegroundColor Green
+    } else {
+        Write-Host "Remote tag not found or already deleted" -ForegroundColor Yellow
     }
     
     # Delete local tag
