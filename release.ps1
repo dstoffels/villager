@@ -1,16 +1,22 @@
-param (
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('major', 'minor', 'patch', 'revert')]
-    [string]$versionPart
-)
+# param (
+#     [Parameter(Mandatory=$false)]
+#     # [ValidateSet('major', 'minor', 'patch', 'prepatch', 'preminor', 'premajor', 'prerelease', 'revert')]
+#     [string]$choice
+# )
+# Get the current version tag
+$currentVersion = (poetry version -s).Trim()
+$tag = "v$currentVersion"
+
+Write-Host "Current version: $currentVersion" -ForegroundColor Blue
+Write-Host "OPTIONS: [major|minor|patch|premajor|preminor|prepatch|prerelease|revert] OR manual entry (e.g. 1.0.1b2)"
+$choice = Read-Host "Set release version"
+
 
 # REVERT MODE
-if ($versionPart -eq 'revert') {
+if ($choice -eq 'revert') {
     Write-Host "Reverting last release..." -ForegroundColor Yellow
     
-    # Get the current version tag
-    $currentVersion = (poetry version -s).Trim()
-    $tag = "v$currentVersion"
+
     
     Write-Host "Current version: $tag"
     
@@ -56,8 +62,8 @@ if ($versionPart -eq 'revert') {
 }
 
 # Require version part for release mode
-if (-not $versionPart) {
-    Write-Error "Version part required. Usage: .\release.ps1 [major|minor|patch|revert]"
+if (-not $choice) {
+    Write-Error "Version part required. Usage: .\release.ps1 [major|minor|patch|premajor|preminor|prepatch|prerelease|[manual entry]|revert]"
     exit 1
 }
 
@@ -75,7 +81,7 @@ if ($status) {
 }
 
 try {
-    poetry version $versionPart
+    poetry version $choice
 } catch {
     Write-Error "Poetry version bump failed."
     exit 1
