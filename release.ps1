@@ -23,30 +23,46 @@ try {
     exit 1
 }
 
-$newVersion = (poetry version -s).Trim()
+$tag = "v" + (poetry version -s).Trim()
 
-if (-not $newVersion) {
+if (-not $tag) {
     Write-Error "Could not retrieve the new version number from 'poetry version -s'."
     exit 1
 }
 
-Write-Host "Releasing v$newVersion" -ForegroundColor Green
+$repoUrl = "https://github.com/dstoffels/villager"
+$tsvUrl = "$repoUrl/releases/download/v$newVersion/cities.tsv"
 
-git add .\pyproject.toml
-git commit -m "Bump to v$newVersion"
+python -c @"
+from villager.db import MetaStore
+from villager import CityRegistry
+meta = MetaStore()
+meta.set(CityRegistry.META_URL_KEY, '$tsvUrl')
+print(f'Updated TSV URL to: $tsvUrl')
+"@
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to update database metadata."
+    exit 1
+}
+
+Write-Host "Releasing $tag" -ForegroundColor Green
+
+git add .\pyproject.toml .\src\villager\data\villager.db
+git commit -m "Bump to $tag"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Git commit failed."
     exit 1
 }
 
-git tag -a "v$newVersion" -m "Release v$newVersion"
+git tag -a "$tag" -m "Release $tag"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Git tag failed."
     exit 1
 }
-$confirm = Read-Host "Push v$newVersion to origin/main? (y/n)"
+$confirm = Read-Host "Push $tag to origin/main? (y/n)"
 if ($confirm -eq 'y') {
     git push origin main --tags
     
@@ -54,7 +70,7 @@ if ($confirm -eq 'y') {
         Write-Error "Git push failed."
         exit 1
     }
-    Write-Host "Release v$newVersion pushed successfully!" -ForegroundColor Green
+    Write-Host "Release $tag pushed successfully!" -ForegroundColor Green
 } else {
     Write-Host "Push cancelled. To push later: git push origin main --tags"
 }
