@@ -1,9 +1,65 @@
 param (
-    [Parameter(Mandatory=$true)]
-    [ValidateSet('major', 'minor', 'patch')]
+    [Parameter(Mandatory=$false)]
+    [ValidateSet('major', 'minor', 'patch', 'revert')]
     [string]$versionPart
 )
 
+# REVERT MODE
+if ($versionPart -eq 'revert') {
+    Write-Host "Reverting last release..." -ForegroundColor Yellow
+    
+    # Get the current version tag
+    $currentVersion = (poetry version -s).Trim()
+    $tag = "v$currentVersion"
+    
+    Write-Host "Current version: $tag"
+    
+    # Delete remote tag and release
+    Write-Host "Deleting remote tag and release..."
+    git push origin --delete $tag 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Remote tag deleted" -ForegroundColor Green
+    } else {
+        Write-Host "Remote tag not found or already deleted" -ForegroundColor Yellow
+    }
+    
+    # Delete GitHub release using gh CLI (if available)
+    $ghInstalled = Get-Command gh -ErrorAction SilentlyContinue
+    if ($ghInstalled) {
+        gh release delete $tag -y 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "GitHub release deleted" -ForegroundColor Green
+        } else {
+            Write-Host "GitHub release not found or already deleted" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "GitHub CLI not installed. Manually delete release at: https://github.com/dstoffels/localis/releases" -ForegroundColor Yellow
+    }
+    
+    # Delete local tag
+    Write-Host "Deleting local tag..."
+    git tag -d $tag 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Local tag deleted" -ForegroundColor Green
+    } else {
+        Write-Host "Local tag not found or already deleted" -ForegroundColor Yellow
+    }
+    
+    # Revert to previous commit
+    Write-Host "Reverting last commit..."
+    git reset --hard HEAD~1
+    
+    Write-Host "Revert complete!" -ForegroundColor Green
+    exit 0
+}
+
+# Require version part for release mode
+if (-not $versionPart) {
+    Write-Error "Version part required. Usage: .\release.ps1 [major|minor|patch|revert]"
+    exit 1
+}
+
+# RELEASE MODE
 $currentBranch = (git rev-parse --abbrev-ref HEAD).Trim()
 if ($currentBranch -ne "main") {
     Write-Error "Must be on main branch to release. Currently on: $currentBranch"
@@ -62,6 +118,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Git tag failed."
     exit 1
 }
+
 $confirm = Read-Host "Push $tag to origin/main? (y/n)"
 if ($confirm -eq 'y') {
     git push origin main --tags
