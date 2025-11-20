@@ -1,7 +1,10 @@
-import villager
+import localis
+from rapidfuzz import fuzz
 
+results = localis.cities.search("Bezuchov")
 
-results = villager.cities.search("madison al")
+# for r, s in results:
+# print(r.name, s)
 
-for r, s in results:
-    print(r.json())
+score = fuzz.token_set_ratio("Hulu", "Hulh")
+print(score)

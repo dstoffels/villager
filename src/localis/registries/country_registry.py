@@ -1,5 +1,5 @@
-from villager.registries.registry import Registry
-from villager.data import CountryModel, Country
+from localis.registries.registry import Registry
+from localis.data import CountryModel, Country
 
 
 class CountryRegistry(Registry[CountryModel, Country]):

@@ -1,7 +1,7 @@
 import pytest
-from villager.data.models import CountryModel, SubdivisionModel, CityModel, Model
+from localis.data.models import CountryModel, SubdivisionModel, CityModel, Model
 from typing import Type
-import villager
+import localis
 import random
 
 
@@ -54,7 +54,7 @@ class TestSelect:
 class TestFTSMatch:
     """FTS_MATCH"""
 
-    sample = random.sample(list(villager.countries), 3)
+    sample = random.sample(list(localis.countries), 3)
 
     def test_limit(self):
         """should respect limits"""

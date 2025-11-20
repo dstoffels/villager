@@ -9,9 +9,9 @@ from pathlib import Path
 
 class Database:
     MAX_PREFIX = 24
-    PATH = "villager.data"
-    FILENAME = "villager.db"
-    CONFIG_FILE = Path.cwd() / ".villager.conf"
+    PATH = "localis.data"
+    FILENAME = "localis.db"
+    CONFIG_FILE = Path.cwd() / ".localis.conf"
 
     def __init__(self, db_path: str = None):
         self.db_path: str = db_path or self.get_db_path()

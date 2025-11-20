@@ -1,4 +1,4 @@
-from villager.search.search_engine import SearchEngine
+from localis.search.search_engine import SearchEngine
 from rapidfuzz import fuzz, process
 
 

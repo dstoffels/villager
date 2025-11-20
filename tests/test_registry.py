@@ -1,7 +1,7 @@
 import pytest
-from villager import countries, subdivisions, cities
-from villager.registries import Registry
-from villager.dtos import DTO
+from localis import countries, subdivisions, cities
+from localis.registries import Registry
+from localis.dtos import DTO
 from utils import select_random, mangle
 import random
 import json

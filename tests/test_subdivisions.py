@@ -1,5 +1,5 @@
 import pytest
-from villager import subdivisions, Subdivision, countries
+from localis import subdivisions, Subdivision, countries
 from utils import select_random
 
 

@@ -1,8 +1,8 @@
-from villager.registries.registry import Registry
-from villager.data import CityModel, City, MetaStore, db
+from localis.registries.registry import Registry
+from localis.data import CityModel, City, MetaStore, db
 import requests
 import io
-import villager
+import localis
 import typer
 import os
 
@@ -85,7 +85,7 @@ class CityRegistry(Registry[CityModel, City]):
             except requests.HTTPError as e:
                 if e.response.status_code == 404:
                     e.add_note(
-                        f"There is a problem with the cities.tsv url, please raise a new issue: https://github.com/dstoffels/villager/issues.\nurl: {url}"
+                        f"There is a problem with the cities.tsv url, please raise a new issue: https://github.com/dstoffels/localis/issues.\nurl: {url}"
                     )
                 raise e
 
@@ -97,12 +97,12 @@ class CityRegistry(Registry[CityModel, City]):
             self.set_loaded()
             typer.echo(f"{self.count} cities loaded.")
             typer.echo(
-                "Run 'villager unload cities' in the CLI or 'villager.cities.unload()' to revert."
+                "Run 'localis unload cities' in the CLI or 'localis.cities.unload()' to revert."
             )
 
         else:
             raise ValueError(
-                f"Error fetching the cities fixture url, the database (meta table) may have been corrupted. Please submit a new issue: https://github.com/dstoffels/villager/issues.\nCurrent url: {url}"
+                f"Error fetching the cities fixture url, the database (meta table) may have been corrupted. Please submit a new issue: https://github.com/dstoffels/localis/issues.\nCurrent url: {url}"
             )
 
     def unload(self) -> None:
@@ -110,7 +110,7 @@ class CityRegistry(Registry[CityModel, City]):
             typer.echo("No cities to unload.")
         else:
             # UNLOAD FILES
-            typer.echo(f"Removing database and villager.conf...")
+            typer.echo(f"Removing database and localis.conf...")
             db.revert_to_default()
             typer.echo("Files removed.")
 
@@ -133,7 +133,7 @@ class CityRegistry(Registry[CityModel, City]):
     def _check_loaded(self):
         if not self._loaded:
             raise RuntimeError(
-                "Cities data not yet loaded. Load with `villager.cities.load()` or `villager load cities` from the CLI."
+                "Cities data not yet loaded. Load with `localis.cities.load()` or `localis load cities` from the CLI."
             )
 
     def get(self, *, id: int = None, geonames_id: str = None, **kwargs):
@@ -200,9 +200,9 @@ class CityRegistry(Registry[CityModel, City]):
         provided = {
             k: v
             for k, v in locals().items()
-            if k in villager.countries.ID_FIELDS and v is not None
+            if k in localis.countries.ID_FIELDS and v is not None
         }
-        country = villager.countries.get(**provided)
+        country = localis.countries.get(**provided)
         if country is None:
             return []
 
@@ -236,10 +236,10 @@ class CityRegistry(Registry[CityModel, City]):
         provided = {
             k: v
             for k, v in locals().items()
-            if k in villager.subdivisions.ID_FIELDS and v is not None
+            if k in localis.subdivisions.ID_FIELDS and v is not None
         }
 
-        sub = villager.subdivisions.get(**provided)
+        sub = localis.subdivisions.get(**provided)
 
         if sub is None:
             return []

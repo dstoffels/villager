@@ -1,14 +1,14 @@
 import json
 from datetime import datetime
 import time
-from villager.dtos import DTO
-from villager.registries import Registry
-import villager
+from localis.dtos import DTO
+from localis.registries import Registry
+import localis
 from tests.utils import mangle
 import random
 
-ITERATIONS = 3
-SAMPLE_SIZE = 1000
+ITERATIONS = 1
+SAMPLE_SIZE = 300
 
 
 def benchmark():
@@ -25,7 +25,7 @@ def benchmark():
 
     for registry_name in registries:
         print(f"Starting {registry_name}...")
-        registry: Registry = getattr(villager, registry_name)
+        registry: Registry = getattr(localis, registry_name)
         entries: list[DTO] = list(registry)
 
         total_queries = 0

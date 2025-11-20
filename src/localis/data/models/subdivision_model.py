@@ -1,6 +1,6 @@
-from villager.data.models.model import Model
-from villager.data.models.fields import CharField
-from villager.dtos import Subdivision
+from localis.data.models.model import Model
+from localis.data.models.fields import CharField
+from localis.dtos import Subdivision
 
 
 class SubdivisionModel(Model[Subdivision]):

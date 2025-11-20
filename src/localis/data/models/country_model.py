@@ -1,6 +1,6 @@
-from villager.data.models.model import Model
-from villager.data.models.fields import CharField, IntField
-from villager.dtos import Country
+from localis.data.models.model import Model
+from localis.data.models.fields import CharField, IntField
+from localis.dtos import Country
 
 
 class CountryModel(Model[Country]):

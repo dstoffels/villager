@@ -702,5 +702,26 @@
             "avg_hit_score": 0.829
         },
         "report": ""
+    },
+    "2025-11-19T22:10:15.476536": {
+        "iterations": 1,
+        "sample_size": 300,
+        "notes": "Discovered search main loop was executing 1 superfluous final iteration, doubling the slowest one.",
+        "countries": {
+            "success_rate": 0.995,
+            "avg_time_ms": 0.257,
+            "avg_hit_score": 0.866
+        },
+        "subdivisions": {
+            "success_rate": 0.963,
+            "avg_time_ms": 13.445,
+            "avg_hit_score": 0.844
+        },
+        "cities": {
+            "success_rate": 0.896,
+            "avg_time_ms": 48.771,
+            "avg_hit_score": 0.86
+        },
+        "report": "Maintained accuracy and improved performance."
     }
 }

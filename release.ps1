@@ -30,12 +30,12 @@ if (-not $tag) {
     exit 1
 }
 
-$repoUrl = "https://github.com/dstoffels/villager"
+$repoUrl = "https://github.com/dstoffels/localis"
 $tsvUrl = "$repoUrl/releases/download/$tag/cities.tsv"
 
 python -c @"
-from villager.data import MetaStore
-from villager import CityRegistry
+from localis.data import MetaStore
+from localis import CityRegistry
 meta = MetaStore()
 meta.set(CityRegistry.META_URL_KEY, '$tsvUrl')
 print(f'Updated TSV URL to: $tsvUrl')
@@ -48,7 +48,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "Releasing $tag" -ForegroundColor Green
 
-git add .\pyproject.toml .\src\villager\data\villager.db
+git add .\pyproject.toml .\src\localis\data\localis.db
 git commit -m "Bump to $tag"
 
 if ($LASTEXITCODE -ne 0) {

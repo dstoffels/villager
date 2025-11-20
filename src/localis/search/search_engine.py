@@ -1,9 +1,8 @@
 # Search Engine for registries.
 
-from villager.data import Model
-from villager.dtos import DTO
+from localis.data import Model
+from localis.dtos import DTO
 from abc import abstractmethod, ABC
-from concurrent.futures import ThreadPoolExecutor
 
 
 class SearchEngine(ABC):
@@ -12,7 +11,6 @@ class SearchEngine(ABC):
     MATCH_THRESHOLD = 0.6
     STRONG_MATCH_THRESHOLD = 0.85
     FTS_HARD_LIMIT = 2000
-    WORKERS = 8
 
     def __init__(
         self,
@@ -30,7 +28,7 @@ class SearchEngine(ABC):
         self.limit: int | None = limit
 
         self._max_score = sum(field_weights.values())
-        self._iterations = max(len(t) for t in self.tokens) - self.MIN_TOKEN_LEN
+        self._iterations = max(len(t) for t in self.tokens)
 
         self._scored: set[int] = set()
         self._matches: dict[Model, float] = {}
@@ -44,7 +42,10 @@ class SearchEngine(ABC):
     def main(self):
         candidates = self._fetch_candidates(exact=True)
 
-        for i in range(1, self._iterations + 2):
+        for i in range(1, self._iterations + 1):
+            if self.query == "beuzchov":
+                print(i, self.tokens)
+                print(self._iterations)
             self._score_candidates(candidates)
 
             if self._should_exit_early(i):
@@ -53,24 +54,22 @@ class SearchEngine(ABC):
             self._truncate_tokens()
 
             candidates = self._fetch_candidates(i)
-            if len(candidates) == 0:
-                continue
 
     def _fetch_candidates(self, i: int = None, exact=False) -> list[Model]:
         if i is None:
             limit = None
         else:
-            if i == self._iterations:
+            if i == self._iterations - 1:
                 limit = self.FTS_HARD_LIMIT
             else:
-                limit = min(self.FTS_HARD_LIMIT, i * 1000)
+                limit = min(self.FTS_HARD_LIMIT, i * 400)
 
         fts_q = " ".join(self.tokens)
 
-        order_by = ["rank"] if exact or i == self._iterations else []
+        order_by = ["rank"] if exact or i == self._iterations - 2 else []
 
         return self.model_cls.fts_match(
-            fts_q, exact_match=exact, limit=limit, order_by=order_by
+            fts_q, exact_match=exact, limit=self.FTS_HARD_LIMIT, order_by=order_by
         )
 
     def _score_candidates(self, candidates: list[Model]):
@@ -84,6 +83,9 @@ class SearchEngine(ABC):
                 self._scored.add(c.id)
 
     def _should_exit_early(self, i):
+        if i == self._iterations:
+            return True
+
         # Did we get a strong match?
         if self._has_strong_match:
             return True

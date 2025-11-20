@@ -1,13 +1,13 @@
-from villager.data import db, Database
-from villager.data.models.fields import Field, Expression
-from villager.dtos import DTO
+from localis.data import db, Database
+from localis.data.models.fields import Field, Expression
+from localis.dtos import DTO
 from typing import TypeVar, Generic
 from abc import ABC
 import sqlite3
 from typing import Type
 import json
 from abc import abstractmethod
-from villager.utils import prep_tokens
+from localis.utils import prep_tokens
 
 TDTO = TypeVar("TDTO", bound=DTO)
 

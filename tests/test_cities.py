@@ -1,6 +1,6 @@
 import pytest
 import warnings
-from villager import cities, City, countries, subdivisions
+from localis import cities, City, countries, subdivisions
 from utils import select_random
 
 
