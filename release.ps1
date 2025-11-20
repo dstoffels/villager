@@ -34,7 +34,7 @@ $repoUrl = "https://github.com/dstoffels/villager"
 $tsvUrl = "$repoUrl/releases/download/v$newVersion/cities.tsv"
 
 python -c @"
-from villager.db import MetaStore
+from villager.data import MetaStore
 from villager import CityRegistry
 meta = MetaStore()
 meta.set(CityRegistry.META_URL_KEY, '$tsvUrl')
