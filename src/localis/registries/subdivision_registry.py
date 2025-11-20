@@ -1,8 +1,8 @@
-from villager.registries.registry import Registry
-from villager.dtos import Subdivision
-from villager.data import SubdivisionModel, CountryModel
+from localis.registries.registry import Registry
+from localis.dtos import Subdivision
+from localis.data import SubdivisionModel, CountryModel
 from rapidfuzz import fuzz
-import villager
+import localis
 
 
 class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
@@ -78,7 +78,7 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
             for k, v in locals().items()
             if k in ("id", "alpha2", "alpha3", "numeric") and v is not None
         }
-        country = villager.countries.get(**provided)
+        country = localis.countries.get(**provided)
         if country is None:
             return []
 
@@ -105,7 +105,7 @@ class SubdivisionRegistry(Registry[SubdivisionModel, Subdivision]):
         provided = {
             k: v
             for k, v in locals().items()
-            if k in villager.countries.ID_FIELDS and v is not None
+            if k in localis.countries.ID_FIELDS and v is not None
         }
         results = self.for_country(admin_level=admin_level, **provided)
 

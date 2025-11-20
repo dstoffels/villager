@@ -1,4 +1,4 @@
-from villager import countries, Country
+from localis import countries, Country
 import pytest
 from utils import select_random
 

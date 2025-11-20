@@ -1,5 +1,5 @@
-from villager.data import db, CountryModel, SubdivisionModel, CityModel, MetaStore
-from villager.utils import clean_row, chunked
+from localis.data import db, CountryModel, SubdivisionModel, CityModel, MetaStore
+from localis.utils import clean_row, chunked
 import csv
 from pathlib import Path
 import zipfile
@@ -58,7 +58,7 @@ def compress_db(db_path: str | Path) -> Path:
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
     with zipfile.ZipFile(
-        "src/villager/db/villager_db.zip", "w", compression=zipfile.ZIP_DEFLATED
+        "src/localis/db/localis_db.zip", "w", compression=zipfile.ZIP_DEFLATED
     ) as zipf:
         zipf.write(db_path, arcname=db_path.name)
 

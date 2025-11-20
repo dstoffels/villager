@@ -1,7 +1,7 @@
-from villager.data.models.model import Model
-from villager.data.models.fields import CharField, IntField, FloatField
-from villager.dtos import SubdivisionBasic, City
-from villager.utils import clean_row, chunked
+from localis.data.models.model import Model
+from localis.data.models.fields import CharField, IntField, FloatField
+from localis.dtos import SubdivisionBasic, City
+from localis.utils import clean_row, chunked
 import csv
 
 

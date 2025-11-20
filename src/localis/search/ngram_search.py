@@ -1,7 +1,5 @@
-from villager.search.search_engine import SearchEngine
-from villager.data import Model
-
-from villager.dtos import DTO
+from localis.search.search_engine import SearchEngine
+from localis.data import Model
 
 
 class NgramSearch(SearchEngine):

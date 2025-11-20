@@ -1,4 +1,4 @@
-from villager.data import db, Database
+from localis.data import db, Database
 
 
 class MetaStore:

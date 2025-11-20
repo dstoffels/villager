@@ -1,11 +1,11 @@
 import typer
 from typing_extensions import Annotated
-from villager.data import MetaStore, Database
-from villager import CityRegistry
-import villager
+from localis.data import MetaStore, Database
+from localis import CityRegistry
+import localis
 
 
-app = typer.Typer(help="Villager CLI")
+app = typer.Typer(help="localis CLI")
 meta = MetaStore()
 
 
@@ -24,9 +24,9 @@ def load(
         ),
     ] = "",
 ):
-    """Load a remote dataset into the database. Use `villager status` to view eligible datasets."""
+    """Load a remote dataset into the database. Use `localis status` to view eligible datasets."""
 
-    DATASETS = {"cities": lambda: villager.cities.load(confirmed, custom_dir)}
+    DATASETS = {"cities": lambda: localis.cities.load(confirmed, custom_dir)}
 
     if dataset in DATASETS:
         DATASETS[dataset]()
@@ -37,8 +37,8 @@ def load(
 
 @app.command()
 def unload(dataset: str):
-    """Drop an eligible table from the database. Use `villager status` to view eligible datasets."""
-    DATASETS = {"cities": villager.cities.unload}
+    """Drop an eligible table from the database. Use `localis status` to view eligible datasets."""
+    DATASETS = {"cities": localis.cities.unload}
 
     if dataset in DATASETS:
         DATASETS[dataset]()
