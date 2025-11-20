@@ -31,7 +31,7 @@ if (-not $tag) {
 }
 
 $repoUrl = "https://github.com/dstoffels/villager"
-$tsvUrl = "$repoUrl/releases/download/v$newVersion/cities.tsv"
+$tsvUrl = "$repoUrl/releases/download/$tag/cities.tsv"
 
 python -c @"
 from villager.data import MetaStore
