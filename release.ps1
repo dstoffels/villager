@@ -49,7 +49,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Releasing $tag" -ForegroundColor Green
 
 git add .\pyproject.toml .\src\localis\data\localis.db
-git commit -m "Bump to $tag"
+git commit -m "Release $tag"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Git commit failed."
