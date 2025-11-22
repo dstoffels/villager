@@ -90,7 +90,8 @@ class TestSearch:
     def test_mangled_name(self, registry: Registry, select_random, seed):
         """should return results with a top score >= 60% (minimum return threshold)"""
         subject: DTO = select_random(registry)
-        results = registry.search(mangle(subject.name, seed=seed))
+        mangled_name = mangle(subject.name, seed=seed)
+        results = registry.search(mangled_name)
         _, top_score = results[0]
 
         assert (

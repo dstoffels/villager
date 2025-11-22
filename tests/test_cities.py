@@ -117,7 +117,7 @@ class TestForCountry:
         assert results, f"expected at least 1 result: {results}"
         assert all(
             country.name == r.country for r in results
-        ), f"expected all results to have the same admin1: {sub.name}, got {set([r.subdivisions for r in results])}"
+        ), f"expected all results to match the subject country name: {country.name}, got {set([r.subdivisions for r in results])}"
 
     @pytest.mark.parametrize("filter", ["population__gt", "population__lt"])
     def test_pop_filters(self, filter: str, city: City, country: Country):

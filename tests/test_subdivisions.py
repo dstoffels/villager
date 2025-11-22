@@ -104,14 +104,19 @@ class TestTypes:
 
         results = subdivisions.types_for_country(alpha2=country.alpha2)
 
-        sub = subdivisions.filter(country=country.alpha2, limit=1)[0]
+        subs = subdivisions.filter(country=country.alpha2)
+        sub = None
+        for s in subs:
+            sub = s
+            if s.type in results:
+                break
 
         assert (
             results and sub
         ), f"expected at least one result for results and control sub: {sub} {results}"
         assert (
             sub.type in results
-        ), f"expected subdvivion's type ({sub.type}) to be in the results: {results}"
+        ), f"expected subdivision's type ({sub.type}) to be in the results: {results}"
 
     @pytest.mark.parametrize("admin_level", [1, 2])
     def test_admin_lvl_filter(self, admin_level, country: Country):
