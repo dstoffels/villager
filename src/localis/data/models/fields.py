@@ -53,7 +53,9 @@ class Field(Generic[T], ABC):
         instance.__dict__[self.name] = value
 
     def __eq__(self, other):
-        return Expression(f"{self.name} MATCH ?", (f'''"{other}"''',))
+        return Expression(
+            f"{self.name} MATCH ? AND {self.name} = ?", (f'"{other}"', str(other))
+        )
 
     def __ne__(self, other):
         return Expression(f"{self.name} != ?", (str(other),))

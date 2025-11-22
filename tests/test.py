@@ -1,10 +1,7 @@
 import localis
 from rapidfuzz import fuzz
 
-results = localis.cities.search("Bezuchov")
+a = localis.countries.get(alpha2="US")
+b = localis.countries.get(alpha2="US")
 
-# for r, s in results:
-# print(r.name, s)
-
-score = fuzz.token_set_ratio("Hulu", "Hulh")
-print(score)
+print(a in [b])

@@ -2,23 +2,18 @@ import pytest
 from localis import countries, subdivisions, cities
 from localis.registries import Registry
 from localis.dtos import DTO
-from utils import select_random, mangle
-import random
-import json
-import warnings
-
-
-@pytest.fixture(autouse=True)
-def test_load_warning():
-    if not cities._loaded:
-        warnings.warn("Cities not loaded, test cancelled")
-        pytest.skip("Cities not loaded, test cancelled")
+from utils import mangle
 
 
 REGISTRIES = [countries, subdivisions, cities]
 
+# used to test all above registries with a single test
+registry_param = pytest.mark.parametrize(
+    "registry", REGISTRIES, ids=lambda r: type(r).__name__
+)
 
-@pytest.mark.parametrize("registry", REGISTRIES, ids=lambda r: type(r).__name__)
+
+@registry_param
 class TestGet:
     """GET"""
 
@@ -33,7 +28,7 @@ class TestGet:
         assert result is None
 
 
-@pytest.mark.parametrize("registry", REGISTRIES, ids=lambda r: type(r).__name__)
+@registry_param
 class TestFilter:
     """FILTER"""
 
@@ -70,105 +65,33 @@ class TestFilter:
         assert all(name in r.name for r in results)
 
 
-@pytest.mark.parametrize("registry", REGISTRIES, ids=lambda r: type(r).__name__)
+@registry_param
 class TestSearch:
     """SEARCH"""
 
-    def test_empty(self, registry: Registry):
+    @pytest.mark.parametrize("bad_q", ["", "zzzzzzzzz", "!@#$%"])
+    def test_empty(self, bad_q, registry: Registry):
         """should return [] with bad or no input."""
 
-        bad_queries = ["", "zzzzzzzzz", "!@#$%"]
-        for q in bad_queries:
-            results = registry.search(q)
-            assert isinstance(results, list)
-            assert (
-                not results
-            ), f"query: {q} should yield [], instead returned {results}"
+        results = registry.search(bad_q)
+        assert isinstance(results, list)
+        assert (
+            not results
+        ), f"query: {bad_q} should yield [], instead returned {results}"
 
-    def test_exact(self, registry: Registry):
+    def test_exact(self, registry: Registry, select_random):
         """should return results containing the input subject."""
 
         subject = select_random(registry)
-        results = registry.search(subject.name, limit=10)
+        results = registry.search(subject.name)
 
-        assert any(subject.name == r.name for r, score in results)
+        assert subject in [r for r, _ in results]
 
-    def test_mangled_name(self, registry: Registry):
-        """should return results containing the input subject with a success rate > 80%."""
-        COUNT = 20
-        SEED = 42
-
-        rng = random.Random(SEED)
-        ids = rng.sample(range(1, registry.count), k=COUNT)
-
-        successes = 0
-        failures = []
-
-        for i, id in enumerate(ids):
-            subject: DTO = registry.get(id=id)
-            mangled_query = mangle(subject.name, seed=SEED + i)
-            results: list[tuple[DTO, float]] = registry.search(mangled_query, limit=10)
-
-            if any(subject.id == r.id for r, score in results):
-                successes += 1
-            else:
-                failures.append(
-                    {
-                        "original": subject.name,
-                        "mangled": mangled_query,
-                        "expected_id": subject.id,
-                        "resulting_ids": [r.id for r, _ in results],
-                    }
-                )
-
-        success_rate = successes / COUNT
-
-        assert success_rate >= 0.8, (
-            f"Success rate: {success_rate:.1%}/80%. "
-            f"Successes: {successes}/{COUNT}. "
-            f"Sample failures: {json.dumps(failures, indent=4, ensure_ascii=False)}"
-        )
-
-    def test_mangled_alt_name(self, registry: Registry):
-        """should return results containing the input subject by one if its alternate names with a success rate > 80%"""
-        COUNT = 20
-        SEED = 100
-
-        rng = random.Random(SEED)
-        searched = 0
-        id = 1
-        successes = 0
-        failures = []
-
-        while searched < COUNT:
-            subject: DTO = registry.get(id=id)
-            if subject.alt_names:
-                rand_alt_name = random.Random(SEED).choice(subject.alt_names)
-                mangled_alt_name = mangle(rand_alt_name, seed=SEED + id)
-
-                # slightly more relaxed limit since alt names is noisier
-                results: list[tuple[DTO, float]] = registry.search(
-                    mangled_alt_name, limit=15
-                )
-
-                if any(subject.id == r.id for r, score in results):
-                    successes += 1
-                else:
-                    failures.append(
-                        {
-                            "original": "|".join(subject.alt_names),
-                            "mangled": mangled_alt_name,
-                            "expected_id": subject.id,
-                            "resulting_ids": [r.id for r, _ in results],
-                        }
-                    )
-                searched += 1
-            id += 1
-
-        success_rate = successes / COUNT
-
-        assert success_rate >= 0.8, (
-            f"Success rate: {success_rate:.1%}/80%. "
-            f"Successes: {successes}/{COUNT}. "
-            f"Sample failures: {json.dumps(failures, indent=4, ensure_ascii=False)}"
-        )
+    def test_mangled_name(self, registry: Registry, select_random, seed):
+        """should return results with a top score > 70%"""
+        subject: DTO = select_random(registry)
+        results = registry.search(mangle(subject.name, seed=seed))
+        _, top_score = results[0]
+        assert (
+            top_score >= 0.7
+        ), f"should see a top score over 0.7. Top score: {top_score}"

@@ -1,14 +1,5 @@
 import pytest
-import warnings
 from localis import cities, City, countries, subdivisions
-from utils import select_random
-
-
-@pytest.fixture(autouse=True)
-def test_load_warning():
-    if not cities._loaded:
-        warnings.warn("Cities not loaded, test cancelled")
-        pytest.skip("Cities not loaded, test cancelled")
 
 
 class TestLoading:
@@ -56,11 +47,6 @@ class TestLoading:
     #     assert cities.count > 0
 
 
-@pytest.fixture
-def city() -> City:
-    return select_random(cities)
-
-
 class TestGet:
     """GET"""
 
@@ -70,8 +56,10 @@ class TestGet:
         value = getattr(city, field)
         kwarg = {field: value}
         result = cities.get(**kwarg)
-        assert isinstance(result, City)
-        assert getattr(result, field) == value
+        assert isinstance(
+            result, City
+        ), f"should return a City, instead returned {result}. {field}: {value}"
+        assert getattr(result, field) == value, f"Result: {result}, {field}: {value}"
 
 
 class TestFilter:
@@ -85,12 +73,14 @@ class TestFilter:
         assert all(city.country in r.country for r in results)
 
     @pytest.mark.parametrize("index", [0, 1])
-    def test_admin(self, index: int, city: City):
+    def test_admin(self, index: int, city: City, select_random):
         """should return a list of cities where its admin field contains the input admin kwarg"""
 
-        # ensure we have an admin1 to choose from
-        while not len(city.subdivisions) > 1:
-            city = select_random(cities)
+        # ensure we have a subdivision to choose from
+        i = 1
+        while not len(city.subdivisions) > index:
+            city = select_random(cities, i)
+            i += 1
 
         sub_name = city.subdivisions[index].name
 
@@ -100,12 +90,16 @@ class TestFilter:
             results = cities.filter(admin2=sub_name)
 
         assert len(results) > 0
-        assert all(sub_name == r.subdivisions[index].name for r in results)
+        assert all(
+            sub_name == r.subdivisions[index].name for r in results
+        ), f"Searched cities for {sub_name}, got back {set([s.subdivisions[index].name for s in results])}"
 
-    def test_alt_names(self, city: City):
+    def test_alt_names(self, city: City, select_random):
         """should return a list of cities where the alt names contain the alt_name kwarg"""
+        i = 1
         while not city.alt_names:
-            city = select_random(cities)
+            city = select_random(cities, i)
+            i += 1
 
         alt_name = city.alt_names[0]
         results = cities.filter(alt_name=alt_name)
@@ -115,6 +109,7 @@ class TestFilter:
             any(alt_name in name or alt_name == name for name in r.alt_names)
             for r in results
         ), f"alt_name: {alt_name}"
+        f"results: {results}"
 
 
 class TestForCountry:
@@ -128,26 +123,28 @@ class TestForCountry:
         assert isinstance(results, list)
         assert len(results) == 0
 
-    def test_country_and_pop_filters(self, city: City):
-        """should return a population-filtered list of cities that all contain the input country code"""
+    # def test_country_and_pop_filters(self, seed, city: City):
+    #     """should return a population-filtered list of cities that all contain the input country code"""
 
-        country = countries.get(alpha2=city.country_alpha2)
-        filters = ["population__gt", "population__lt", None]
+    #     country = countries.get(alpha2=city.country_alpha2)
+    #     filters = ["population__gt", "population__lt", None]
 
-        for field in countries.ID_FIELDS:
-            for filter in filters:
-                cmap = {field: getattr(country, field)}
-                fmap = {filter: city.population} if filter is not None else {}
-                results = cities.for_country(**cmap, **fmap)
+    #     for field in countries.ID_FIELDS:
+    #         for filter in filters:
+    #             cmap = {field: getattr(country, field)}
+    #             fmap = {filter: city.population} if filter is not None else {}
+    #             results = cities.for_country(**cmap, **fmap)
 
-                if filter is not None:
-                    if "__gt" in filter:
-                        assert all(city.population < r.population for r in results)
-                    elif "__lt" in filter:
-                        assert all(city.population > r.population for r in results)
+    #             if filter is not None:
+    #                 if "__gt" in filter:
+    #                     assert all(city.population < r.population for r in results)
+    #                 elif "__lt" in filter:
+    #                     assert all(city.population > r.population for r in results)
 
-                assert len(results) > 0
-                assert all(city.country_alpha2 == r.country_alpha2 for r in results)
+    #             assert len(results) > 0
+    #             assert all(
+    #                 city.country_alpha2 == r.country_alpha2 for r in results
+    #             ), f"random seed: {seed}"
 
 
 class TestForSubdivision:

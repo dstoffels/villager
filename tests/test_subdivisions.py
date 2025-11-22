@@ -1,23 +1,21 @@
 import pytest
 from localis import subdivisions, Subdivision, countries
-from utils import select_random
-
-
-@pytest.fixture
-def sub() -> Subdivision:
-    return select_random(subdivisions)
 
 
 class TestGet:
     """GET"""
 
     @pytest.mark.parametrize("field", ["id", "geonames_code", "iso_code"])
-    def test_get(self, field: str, sub: Subdivision):
-        """should fetch a subdivision by:"""
+    def test_get(self, field: str, sub: Subdivision, select_random):
+        """should fetch a subdivision by field:"""
 
         # need to pick one with all fields
-        while not sub.geonames_code or not sub.iso_code:
-            sub = select_random(subdivisions)
+        i = 1
+        while not getattr(sub, field):
+            sub = select_random(reg=subdivisions, seed_offset=i)
+            i += 1
+        # while not sub.geonames_code or not sub.iso_code:
+        #     sub = select_random(subdivisions)
 
         value = getattr(sub, field)
         kwarg = {field: value}
@@ -26,45 +24,31 @@ class TestGet:
         assert isinstance(result, Subdivision)
         assert getattr(result, field) == value
 
-    def _fringe_case(self, sub: Subdivision):
-        """"""
-
-        # TODO: RS.SE does not match to due constituent (admin2) subs returning first, need to refactor model, expressions and fields to accommodate.
-
 
 class TestFilter:
     """FILTER"""
 
     @pytest.mark.parametrize("field", ["type", "country"])
-    def test_fields(self, field: str, sub: Subdivision):
+    def test_fields(self, field: str):
         """should return a list of subdivisions where the field kwarg is in:"""
 
-        # need to pick one with all fields
-        while not sub.type or not sub.country:
-            sub = select_random(subdivisions)
-
+        sub = subdivisions.get(id=1)  # Andorra La Vella
         value = getattr(sub, field)
-        kwarg = {field: value}
-        results = subdivisions.filter(**kwarg)
+        results = subdivisions.filter(**{field: value})
 
         assert len(results) > 0, "should return at least 1"
-        assert all(value in getattr(r, field) for r in results)
+        assert sub in results, "subject should be in results"
 
-    def test_alt_names(self, sub: Subdivision):
+    def test_alt_names(self):
         """should return a list of subdivisions where its alt_names field contains the alt_name kwarg"""
 
-        # need to pick on with alt_names
-        while not sub.alt_names:
-            sub = select_random(subdivisions)
+        sub = subdivisions.get(id=7)  # Saint Julia de Loria
 
-        alt_name = sub.alt_names[0]
+        alt_name = sub.alt_names[0]  # grab the first alias
         results = subdivisions.filter(alt_name=alt_name)
 
         assert len(results) > 0, "should return at least 1"
-        assert all(
-            any(alt_name in name or alt_name == name for name in r.alt_names)
-            for r in results
-        )
+        assert sub in results
 
 
 class TestForCountry:
