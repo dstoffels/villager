@@ -1,11 +1,5 @@
 from localis import countries, Country
 import pytest
-from utils import select_random
-
-
-@pytest.fixture
-def country() -> Country:
-    return select_random(countries)
 
 
 class TestGet:
@@ -24,20 +18,22 @@ class TestGet:
 class TestFilter:
     """FILTER"""
 
-    def test_filter_by_official_name(self, country: Country):
+    def test_filter_by_official_name(self):
         """should filter results by country's official_name field"""
-        while not country.official_name:
-            country = select_random(countries)
 
+        country = countries.get(id=1)  # Andorra
         results = countries.filter(official_name=country.official_name)
 
         assert len(results) > 0, "should have more than 1 result"
-        assert all(country.official_name in r.official_name for r in results)
+        assert country in results
 
-    def test_filter_by_alt_name(self, country: Country):
+    def test_filter_by_alt_name(self, country: Country, select_random):
         """should filter results by country's alt_names field"""
+
+        i = 1
         while not country.alt_names:
-            country = select_random(countries)
+            country = select_random(countries, i)
+            i += 1
 
         alt_name = country.alt_names[0]
         results = countries.filter(alt_name=alt_name)

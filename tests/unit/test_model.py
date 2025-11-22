@@ -1,8 +1,5 @@
-import pytest
 from localis.data.models import CountryModel, SubdivisionModel, CityModel, Model
 from typing import Type
-import localis
-import random
 
 
 def trunc(text: str) -> str:
@@ -11,10 +8,8 @@ def trunc(text: str) -> str:
 
 def match_exact(model_cls: Type[Model], model: Model):
     results = model_cls.fts_match(model.name, limit=None)
-    did_pass = any(model.name in r.name for r in results)
-    if not did_pass:
-        print(model.name, results)
-    assert did_pass
+    assert any(model.name in r.name for r in results), f"{model.name}"
+    f"{results}"
 
 
 class TestGet:
@@ -38,14 +33,14 @@ class TestSelect:
     def test_all(self):
         """should return entire table if no args given"""
 
+        # use country table for the small dataset
         results = CountryModel.select()
         count = CountryModel.count()
 
         assert len(results) == count
 
-    def test_list(self):
-        """returns a list where every item matches exactly"""
-
+    def test_field_eq(self):
+        """should produce a filtered list where all results match the field tested"""
         test = "United States|US|USA"
         results = SubdivisionModel.select(SubdivisionModel.country == test)
         assert all(test == s.country for s in results)
@@ -53,8 +48,6 @@ class TestSelect:
 
 class TestFTSMatch:
     """FTS_MATCH"""
-
-    sample = random.sample(list(localis.countries), 3)
 
     def test_limit(self):
         """should respect limits"""
@@ -88,13 +81,11 @@ class TestFTSMatch:
         results = CountryModel.fts_match("")
         assert results == []
 
-    @pytest.mark.parametrize("country", sample, ids=lambda c: c.name)
     def test_exact(self, country: CountryModel):
         """should return a list of exact matches"""
         results = CountryModel.fts_match(country.name)
         assert country.name in [c.name for c in results]
 
-    @pytest.mark.parametrize("country", sample, ids=lambda c: c.name)
     def test_prefix(self, country: CountryModel):
         """should return a matched list from truncated prefix"""
         results = CountryModel.fts_match(trunc(country.name), exact_match=False)
