@@ -10,11 +10,12 @@ BASE_PATH = Path(__file__).parent.parent
 class CountryDTO:
     name: str
     official_name: str
+    alt_names: list[str]
     alpha2: str
     alpha3: str
     numeric: int
-    alt_names: list[str] = field(default_factory=list)
-    flag: str = ""
+    flag: str
+    # id: int = field(default=None)
 
     def dump(self):
         # final dedupe before dump

@@ -1,7 +1,7 @@
 import pytest
 from localis import countries, subdivisions, cities
 from localis.registries import Registry
-from localis.dtos import DTO
+from localis.data.dtos import DTO
 from utils import mangle
 
 

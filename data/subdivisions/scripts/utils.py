@@ -13,6 +13,7 @@ BASE_PATH = Path(__file__).parent.parent
 @dataclass
 class SubdivisionDTO:
     name: str
+    country_id: int
     country_alpha2: str
     country_alpha3: str
     country_name: str
