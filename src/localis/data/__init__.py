@@ -1,2 +1,5 @@
 # from .cache import Cache
-from .dtos import DTO, Country, Subdivision, City
+from .model import DTO, Model
+from .country import CountryBase, Country, CountryModel
+from .subdivision import SubdivisionBase, Subdivision, SubdivisionModel
+from .city import City, CityModel

@@ -2,21 +2,19 @@ from collections import defaultdict
 from typing import Generic, TypeVar
 from localis.data import DTO
 
-TDTO = TypeVar("TDTO", bound=DTO)
 
-
-class NgramIndex(Generic[TDTO]):
+class NgramIndex:
     """Ngram search engine using trigram as default."""
 
     def __init__(self, n: int = 3):
         self.n = n
-        self.index: dict[str, set[TDTO]] = defaultdict(set)
+        self.index: dict[str, set[int]] = defaultdict(set)
 
     def add(self, text: str, id: int):
-        """Add bigrams to index"""
+        """Add ngrams to the index"""
 
-        # normalize
-        text = text.lower()
+        # # normalize
+        # text = text.lower()
 
         # store shorties directly
         if len(text) < self.n:
@@ -28,7 +26,7 @@ class NgramIndex(Generic[TDTO]):
             ngram = text[i : i + self.n]
             self.index[ngram].add(id)
 
-    def search(self, query: str, threshold=0.2) -> list[tuple[int, float]]:
+    def search(self, query: str, threshold=0.5) -> list[tuple[int, float]]:
         query = query.lower()
 
         # early exit for shorties
