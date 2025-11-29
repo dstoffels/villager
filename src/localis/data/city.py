@@ -7,8 +7,6 @@ from sys import intern
 
 @dataclass(slots=True)
 class City(DTO):
-    # display_name: str
-    ascii_name: str
     admin1: SubdivisionBase
     admin2: SubdivisionBase
     country: CountryBase
@@ -19,6 +17,8 @@ class City(DTO):
 
 @dataclass(slots=True)
 class CityModel(City, Model):
+    SEARCH_FIELDS = ("name", "admin1.search_context", "country.search_context")
+
     admin1: SubdivisionModel
     admin2: SubdivisionModel
     country: CountryModel
@@ -34,14 +34,13 @@ class CityModel(City, Model):
     def set_search_meta(self):
         base = [
             self.name.lower().replace(" ", ""),
-            self.ascii_name.lower().replace(" ", ""),
         ]
 
         admin1 = (self.admin1.search_context or "") if self.admin1 else ""
 
         country = (self.country.search_context or "") if self.country else ""
 
-        self.search_fields = [
+        self.search_values = [
             base[0],
             base[1],
             admin1,

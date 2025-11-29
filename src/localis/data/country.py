@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from .model import DTO, Model
-from sys import intern
 
 
 @dataclass(slots=True)
@@ -19,9 +18,10 @@ class Country(CountryBase):
 
 @dataclass(slots=True)
 class CountryModel(Country, Model):
+    SEARCH_FIELDS = ("name", "official_name", "alpha2", "alpha3", "aliases")
 
     def set_search_meta(self):
-        self.search_fields = (
+        self.search_values = (
             self.name.lower(),
             self.official_name.lower(),
             self.alpha2.lower(),
@@ -29,4 +29,4 @@ class CountryModel(Country, Model):
             *(a.lower() for a in self.aliases),
         )
 
-        self.search_context = " ".join(self.search_fields)
+        self.search_context = " ".join(self.search_values)

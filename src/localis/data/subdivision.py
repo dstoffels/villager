@@ -21,6 +21,8 @@ class Subdivision(SubdivisionBase):
 
 @dataclass(slots=True)
 class SubdivisionModel(Subdivision, Model):
+    SEARCH_FIELDS = ("name", "iso_code", "aliases", "country.search_context")
+
     parent: "SubdivisionModel"
     country: CountryModel
 
@@ -34,7 +36,7 @@ class SubdivisionModel(Subdivision, Model):
     def set_search_meta(self):
         iso_code = self.iso_code.split("-")[1] if self.iso_code else ""
 
-        self.search_fields = (
+        self.search_values = (
             self.name.lower(),
             iso_code.lower(),
             *(a.lower() for a in self.aliases),
@@ -42,4 +44,4 @@ class SubdivisionModel(Subdivision, Model):
 
         country_context = self.country.search_context if self.country else ""
 
-        self.search_context = f'{" ".join(self.search_fields)} {country_context}'
+        self.search_context = f'{" ".join(self.search_values)} {country_context}'

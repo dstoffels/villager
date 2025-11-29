@@ -85,12 +85,12 @@ class SearchEngine:
             score = 0.0
             candidate = self.cache[id]
 
-            for field in candidate.search_fields:
+            for field in candidate.search_values:
                 field_score = fuzz.WRatio(self.query, field) / 100
                 if field_score >= NOISE_THRESHOLD:
                     score += field_score
 
-            final_score = score / len(candidate.search_fields)
+            final_score = score / len(candidate.search_values)
             if final_score > 0.0:
                 results.append((candidate.dto, final_score))
 

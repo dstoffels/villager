@@ -26,15 +26,37 @@ class DTO:
         return self.json()
 
 
-# @dataclass(slots=True)
 class Model(DTO):
-    search_tokens: str
-    search_fields: tuple[str] = ()
+    SEARCH_FIELDS: tuple[str] = ()
+
+    search_tokens: str = ""
     search_context: str = ""
 
     @property
     def dto(self) -> DTO:
         return extract_base(self)
+
+    _search_values: list[str] | None = None
+
+    @property
+    def search_values(self) -> list[str]:
+        if self._search_values is None:
+            self._search_values = []
+            for field in self.SEARCH_FIELDS:
+                obj = self
+                for nested in field.split("."):
+                    value: str | list[str] = getattr(obj, nested)
+                    if value is None:
+                        break
+                    obj = value
+
+                if isinstance(value, list):
+                    for v in value:
+                        self._search_values.append(v.lower())
+                elif value is not None:
+                    self._search_values.append(value.lower())
+            self.search_context = " ".join(self._search_values)
+        return self._search_values
 
     def set_search_meta(self):
         pass
