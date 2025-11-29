@@ -2,7 +2,6 @@ from localis.data.model import Model
 from collections import defaultdict
 from rapidfuzz import fuzz
 from localis.utils import normalize, generate_trigrams
-import re
 
 
 class SearchEngine:
@@ -10,32 +9,17 @@ class SearchEngine:
         self.cache = cache
         self.index: dict[str, set[int]] = defaultdict(set)
 
-        # Index name tokens only
         for id, model in cache.items():
-            for trigram in model.search_tokens.split():
+            for trigram in model.search_tokens.split("|"):
                 self.index[trigram].add(id)
-
-            # for token in model.search_tokens:
-            #     if len(token) <= 3:
-            #         # Shorties: exact match
-            #         self.index[token].add(id)
-            #     else:
-            #         # Long tokens: trigrams
-            #         for i in range(len(token) - 2):
-            #             trigram = token[i : i + 3]
-            #             self.index[trigram].add(id)
 
     def search(self, query: str, threshold=0.6, limit=10):
         if not query:
             return []
 
-        self.query = self.normalize(query)
-        tokens = query.split()
+        self.query = normalize(query)
 
-        if not tokens:
-            return []
-
-        candidates = self._get_candidates(tokens)
+        candidates = self._get_candidates()
 
         if not candidates:
             return []
@@ -44,32 +28,30 @@ class SearchEngine:
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:limit]
 
-    def _get_candidates(self, tokens: list[str]) -> set[int]:
+    def _get_candidates(self) -> set[int]:
         """Intersect token candidates progressively until intersection is empty"""
         candidates = None
 
-        for token in tokens:
-            token_candidates = self._get_token_candidates(token)
+        for trigram_candidates in [
+            self.index.get(trigram) for trigram in generate_trigrams(self.query)
+        ]:
+            if not trigram_candidates:
+                continue
 
             if candidates is None:
-                candidates = token_candidates
+                candidates = trigram_candidates
             else:
-                intersected = candidates & token_candidates
+                intersected = candidates & trigram_candidates
 
-                if not intersected or len(intersected) < 100:
+                if not intersected or len(intersected) < 700:
                     return candidates
 
                 candidates = intersected
 
-        return candidates if candidates else set()
+        return candidates
 
     def _get_token_candidates(self, token: str) -> set[int]:
         """Get all candidates matching this token via trigrams"""
-        # if len(token) <= 3:
-        #     return self.index.get(token, set())
-        # candidates = set()
-
-        # short circuit exact token match
         candidates = self.index.get(token, set())
         if not candidates:
             for trigram in generate_trigrams(token):
@@ -78,9 +60,7 @@ class SearchEngine:
         return candidates
 
     def score_candidates(self, candidates: set[int]):
-        NOISE_THRESHOLD = 0.6
-
-        print("candidate cnt", len(candidates))
+        NOISE_THRESHOLD = 0.66
 
         results = []
 
