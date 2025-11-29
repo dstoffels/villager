@@ -12,15 +12,18 @@ class SearchEngine:
 
         # Index name tokens only
         for id, model in cache.items():
-            for token in model.name.lower().split():
-                if len(token) <= 3:
-                    # Shorties: exact match
-                    self.index[token].add(id)
-                else:
-                    # Long tokens: trigrams
-                    for i in range(len(token) - 2):
-                        trigram = token[i : i + 3]
-                        self.index[trigram].add(id)
+            for trigram in model.search_tokens.split():
+                self.index[trigram].add(id)
+
+            # for token in model.search_tokens:
+            #     if len(token) <= 3:
+            #         # Shorties: exact match
+            #         self.index[token].add(id)
+            #     else:
+            #         # Long tokens: trigrams
+            #         for i in range(len(token) - 2):
+            #             trigram = token[i : i + 3]
+            #             self.index[trigram].add(id)
 
     def search(self, query: str, threshold=0.6, limit=10):
         if not query:
@@ -45,7 +48,7 @@ class SearchEngine:
         """Intersect token candidates progressively until intersection is empty"""
         candidates = None
 
-        for i, token in enumerate(tokens):
+        for token in tokens:
             token_candidates = self._get_token_candidates(token)
 
             if candidates is None:
@@ -83,15 +86,17 @@ class SearchEngine:
 
         for id in candidates:
             score = 0.0
+            matches = 0
             candidate = self.cache[id]
 
             for field in candidate.search_values:
-                field_score = fuzz.WRatio(self.query, field) / 100
+                field_score = fuzz.token_set_ratio(self.query, field) / 100
                 if field_score >= NOISE_THRESHOLD:
                     score += field_score
+                    matches += 1
 
-            final_score = score / len(candidate.search_values)
-            if final_score > 0.0:
+            final_score = score / matches if matches > 0 else 0.0
+            if final_score > NOISE_THRESHOLD:
                 results.append((candidate.dto, final_score))
 
         return results

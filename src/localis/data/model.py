@@ -30,7 +30,6 @@ class Model(DTO):
     SEARCH_FIELDS: tuple[str] = ()
 
     search_tokens: str = ""
-    search_context: str = ""
 
     @property
     def dto(self) -> DTO:
@@ -55,8 +54,15 @@ class Model(DTO):
                         self._search_values.append(v.lower())
                 elif value is not None:
                     self._search_values.append(value.lower())
-            self.search_context = " ".join(self._search_values)
         return self._search_values
+
+    _search_context: str | None = None
+
+    @property
+    def search_context(self):
+        if self._search_context is None:
+            self._search_context = " ".join(self.search_values)
+        return self._search_context
 
     def set_search_meta(self):
         pass

@@ -21,7 +21,17 @@ class Subdivision(SubdivisionBase):
 
 @dataclass(slots=True)
 class SubdivisionModel(Subdivision, Model):
-    SEARCH_FIELDS = ("name", "iso_code", "aliases", "country.search_context")
+    SEARCH_FIELDS = (
+        "name",
+        "iso_suffix",
+        "aliases",
+        "parent.search_context",
+        "country.search_context",
+    )
+
+    @property
+    def iso_suffix(self) -> str:
+        return self.iso_code.split("-")[1] if self.iso_code else ""
 
     parent: "SubdivisionModel"
     country: CountryModel
