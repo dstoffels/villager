@@ -7,10 +7,9 @@ class TestGet:
 
     @pytest.mark.parametrize("field", ["id", "alpha2", "alpha3", "numeric"])
     def test_get(self, field: str, country: Country):
-        """should fetch a country by"""
+        """should fetch a country by:"""
         value = getattr(country, field)
-        kwarg = {field: value}
-        result = countries.get(**kwarg)
+        result = countries.get(value)
         assert isinstance(result, Country)
         assert getattr(result, field) == value
 

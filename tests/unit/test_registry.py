@@ -19,12 +19,7 @@ class TestGet:
 
     def test_none(self, registry: Registry):
         """should return None if no match found"""
-        result = registry.get(id=-1)
-        assert result is None
-
-    def test_kwargs(self, registry: Registry):
-        """should return None if given an invalid kwarg"""
-        result = registry.get(pid=1)
+        result = registry.get(-1)
         assert result is None
 
 

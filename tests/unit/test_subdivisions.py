@@ -9,17 +9,14 @@ class TestGet:
     def test_get(self, field: str, sub: Subdivision, select_random):
         """should fetch a subdivision by field:"""
 
-        # need to pick one with all fields
+        # need to pick one with a non-null value for the field
         i = 1
         while not getattr(sub, field):
             sub = select_random(reg=subdivisions, seed_offset=i)
             i += 1
-        # while not sub.geonames_code or not sub.iso_code:
-        #     sub = select_random(subdivisions)
 
         value = getattr(sub, field)
-        kwarg = {field: value}
-        result = subdivisions.get(**kwarg)
+        result = subdivisions.get(value)
 
         assert isinstance(result, Subdivision)
         assert getattr(result, field) == value
