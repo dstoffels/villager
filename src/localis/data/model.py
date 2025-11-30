@@ -27,7 +27,7 @@ class DTO:
 
 
 class Model(DTO):
-    SEARCH_FIELDS: tuple[str] = ()
+    SEARCH_FIELDS: dict[str, float] = {}
     LOOKUP_FIELDS: tuple[str] = ()
 
     FILTER_FIELDS: dict[str, tuple[str]] = defaultdict(tuple)
@@ -39,13 +39,13 @@ class Model(DTO):
     def dto(self) -> DTO:
         return extract_base(self)
 
-    _search_values: list[str] | None = None
+    _search_values: list[tuple[str, float]] | None = None
 
     @property
-    def search_values(self) -> list[str]:
+    def search_values(self) -> list[tuple[str, float]]:
         if self._search_values is None:
             self._search_values = []
-            for field in self.SEARCH_FIELDS:
+            for field, weight in self.SEARCH_FIELDS.items():
                 obj = self
                 for nested in field.split("."):
                     value: str | list[str] = getattr(obj, nested)
@@ -54,19 +54,16 @@ class Model(DTO):
                     obj = value
 
                 if isinstance(value, list):
-                    for v in value:
-                        self._search_values.append(v.lower())
+                    self._search_values.append(([v.lower() for v in value], weight))
+
                 elif value is not None:
-                    self._search_values.append(value.lower())
+                    self._search_values.append((value.lower(), weight))
         return self._search_values
 
-    _search_context: str | None = None
+    # _search_context: str | None = None
 
-    @property
-    def search_context(self):
-        if self._search_context is None:
-            self._search_context = " ".join(self.search_values)
-        return self._search_context
-
-    def set_search_meta(self):
-        pass
+    # @property
+    # def search_context(self):
+    #     if self._search_context is None:
+    #         self._search_context = " ".join(self.search_values)
+    #     return self._search_context

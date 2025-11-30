@@ -21,13 +21,15 @@ class Subdivision(SubdivisionBase):
 
 @dataclass(slots=True)
 class SubdivisionModel(Subdivision, Model):
-    SEARCH_FIELDS = (
-        "name",
-        "iso_suffix",
-        "aliases",
-        "parent.search_context",
-        "country.search_context",
-    )
+    SEARCH_FIELDS = {
+        "name": 1.0,
+        "iso_suffix": 0.5,
+        "aliases": 1.0,
+        "parent.name": 0.4,
+        "country.name": 0.4,
+        "country.alpha2": 0.4,
+        "country.alpha3": 0.4,
+    }
     LOOKUP_FIELDS = ("iso_code", "geonames_code")
     FILTER_FIELDS = {
         "name": ("name", "aliases"),

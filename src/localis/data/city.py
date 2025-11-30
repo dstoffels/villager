@@ -17,7 +17,14 @@ class City(DTO):
 
 @dataclass(slots=True)
 class CityModel(City, Model):
-    SEARCH_FIELDS = ("name", "admin1.search_context", "country.search_context")
+    SEARCH_FIELDS = {
+        "name": 1.0,
+        "admin1.name": 0.9,
+        "admin1.iso_suffix": 0.9,
+        "country.name": 0.4,
+        "country.alpha2": 0.4,
+        "country.alpha3": 0.4,
+    }
     FILTER_FIELDS = {
         "name": ("name",),
         "country": (
@@ -43,28 +50,3 @@ class CityModel(City, Model):
         dto.admin2 = self.admin2 and extract_base(self.admin2, depth=2)
         dto.country = self.country and extract_base(self.country, depth=2)
         return dto
-
-    def set_search_meta(self):
-        base = [
-            self.name.lower().replace(" ", ""),
-        ]
-
-        admin1 = (self.admin1.search_context or "") if self.admin1 else ""
-
-        country = (self.country.search_context or "") if self.country else ""
-
-        self.search_values = [
-            base[0],
-            base[1],
-            admin1,
-            country,
-        ]
-
-        # Fuzzy context stays full
-        self.search_context = " ".join(
-            [
-                self.ascii_name,
-                self.admin1.search_context if self.admin1 else "",
-                self.country.search_context if self.country else "",
-            ]
-        ).lower()

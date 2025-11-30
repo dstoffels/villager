@@ -18,7 +18,13 @@ class Country(CountryBase):
 
 @dataclass(slots=True)
 class CountryModel(Country, Model):
-    SEARCH_FIELDS = ("name", "official_name", "alpha2", "alpha3", "aliases")
+    SEARCH_FIELDS = {
+        "name": 1.0,
+        "official_name": 1.0,
+        "alpha2": 1.0,
+        "alpha3": 1.0,
+        "aliases": 1.0,
+    }
     LOOKUP_FIELDS = ("alpha2", "alpha3", "numeric")
     FILTER_FIELDS = {"name": ("name", "official_name", "aliases")}
 
