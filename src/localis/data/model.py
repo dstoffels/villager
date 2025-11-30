@@ -28,6 +28,8 @@ class DTO:
 
 class Model(DTO):
     SEARCH_FIELDS: tuple[str] = ()
+    LOOKUP_FIELDS: tuple[str] = ()
+    FILTER_FIELDS: tuple[str] = ()
 
     search_tokens: str = ""
 
