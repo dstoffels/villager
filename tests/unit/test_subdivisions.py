@@ -1,5 +1,5 @@
 import pytest
-from localis import subdivisions, Subdivision, Country
+from localis import subdivisions, Subdivision
 
 
 class TestGet:
@@ -28,9 +28,10 @@ class TestFilter:
     @pytest.mark.parametrize("field", ["type", "country"])
     def test_fields(self, field: str):
         """should return a list of subdivisions where the field kwarg is in:"""
-
-        sub = subdivisions.get(id=1)  # Andorra La Vella
+        sub = subdivisions.get(1)  # Andorra La Vella
         value = getattr(sub, field)
+        if hasattr(value, "alpha2"):
+            value = value.alpha2
         results = subdivisions.filter(**{field: value})
 
         assert len(results) > 0, "should return at least 1"
@@ -39,10 +40,10 @@ class TestFilter:
     def test_alt_names(self):
         """should return a list of subdivisions where its alt_names field contains the alt_name kwarg"""
 
-        sub = subdivisions.get(id=7)  # Saint Julia de Loria
+        sub = subdivisions.get(7)  # Saint Julia de Loria
 
         alt_name = sub.aliases[0]  # grab the first alias
-        results = subdivisions.filter(alt_name=alt_name)
+        results = subdivisions.filter(name=alt_name)
 
         assert len(results) > 0, "should return at least 1"
         assert sub in results

@@ -1,4 +1,4 @@
-from localis.data.model import Model
+from localis.data.model import Model, DTO
 from collections import defaultdict
 from rapidfuzz import fuzz
 from localis.utils import normalize, generate_trigrams
@@ -59,7 +59,7 @@ class SearchEngine:
 
         return candidates
 
-    def score_candidates(self, candidates: set[int]):
+    def score_candidates(self, candidates: set[int]) -> list[tuple[DTO, float]]:
         NOISE_THRESHOLD = 0.66
 
         results = []

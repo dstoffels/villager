@@ -20,6 +20,7 @@ class Country(CountryBase):
 class CountryModel(Country, Model):
     SEARCH_FIELDS = ("name", "official_name", "alpha2", "alpha3", "aliases")
     LOOKUP_FIELDS = ("alpha2", "alpha3", "numeric")
+    FILTER_FIELDS = {"name": ("name", "official_name", "aliases")}
 
     def set_search_meta(self):
         self.search_values = (

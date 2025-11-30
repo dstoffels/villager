@@ -29,7 +29,9 @@ class DTO:
 class Model(DTO):
     SEARCH_FIELDS: tuple[str] = ()
     LOOKUP_FIELDS: tuple[str] = ()
-    FILTER_FIELDS: tuple[str] = ()
+
+    FILTER_FIELDS: dict[str, tuple[str]] = defaultdict(tuple)
+    """Fields that can be used for filtering. Key is the filter name, value is a tuple of field names to search on."""
 
     search_tokens: str = ""
 

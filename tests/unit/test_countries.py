@@ -17,11 +17,10 @@ class TestGet:
 class TestFilter:
     """FILTER"""
 
-    def test_filter_by_official_name(self):
+    def test_filter_by_official_name(self, country: Country):
         """should filter results by country's official_name field"""
 
-        country = countries.get(id=1)  # Andorra
-        results = countries.filter(official_name=country.official_name)
+        results = countries.filter(name=country.official_name)
 
         assert len(results) > 0, "should have more than 1 result"
         assert country in results
@@ -35,7 +34,7 @@ class TestFilter:
             i += 1
 
         alt_name = country.aliases[0]
-        results = countries.filter(alt_name=alt_name)
+        results = countries.filter(name=alt_name)
 
         assert len(results) > 0, "should have at least 1 result"
         assert all(alt_name in r.aliases for r in results)

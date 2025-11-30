@@ -29,7 +29,17 @@ class SubdivisionModel(Subdivision, Model):
         "country.search_context",
     )
     LOOKUP_FIELDS = ("iso_code", "geonames_code")
-    FILTER_FIELDS = ("name", "country", "admin_level", "type")
+    FILTER_FIELDS = {
+        "name": ("name", "aliases"),
+        "type": ("type",),
+        "country": (
+            "country.name",
+            "country.alpha2",
+            "country.alpha3",
+            "country.numeric",
+        ),
+        "admin_level": ("admin_level",),
+    }
 
     @property
     def iso_suffix(self) -> str:
