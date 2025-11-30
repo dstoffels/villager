@@ -4,16 +4,19 @@ from localis.data import Model
 class LookupIndex:
     def __init__(self, cache: dict[int, Model], lookup_fields: list[str]):
         self.cache = cache
-        self.index: dict[str, dict[str | int, Model]] = {}
-        for field in lookup_fields:
-            self.index[field] = {}
-            for model in cache.values():
-                key = getattr(model, field)
+        self.index: dict[str | int, int] = {}
+        print(lookup_fields)
+        for id, model in cache.items():
+            for field in lookup_fields:
+                key = getattr(model, field, None)
                 if isinstance(key, str):
                     key = key.lower()
-                self.index[field][key] = model
+                self.index[key] = id
 
-    def get(self, field: str, key: str | int):
+    def get(self, key: str | int) -> Model | None:
         if isinstance(key, str):
             key = key.lower()
-        return self.cache.get(key, {})
+        model_id = self.index.get(key)
+
+        # return None if not found, fallback to direct cache lookup by id if index miss
+        return model_id and self.cache.get(model_id) or self.cache.get(key)

@@ -18,6 +18,7 @@ class City(DTO):
 @dataclass(slots=True)
 class CityModel(City, Model):
     SEARCH_FIELDS = ("name", "admin1.search_context", "country.search_context")
+    FILTER_FIELDS = ("country", "admin1", "admin2")
 
     admin1: SubdivisionModel
     admin2: SubdivisionModel

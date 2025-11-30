@@ -12,13 +12,14 @@ class CountryBase(DTO):
 class Country(CountryBase):
     official_name: str
     aliases: list[str]
-    numeric: int
+    numeric: str
     flag: str
 
 
 @dataclass(slots=True)
 class CountryModel(Country, Model):
     SEARCH_FIELDS = ("name", "official_name", "alpha2", "alpha3", "aliases")
+    LOOKUP_FIELDS = ("alpha2", "alpha3", "numeric")
 
     def set_search_meta(self):
         self.search_values = (
