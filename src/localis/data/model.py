@@ -61,3 +61,7 @@ class Model(DTO):
                 elif value is not None:
                     self._search_values.append((value.lower(), weight))
         return self._search_values
+
+    @property
+    def search_context(self) -> str:
+        return ""

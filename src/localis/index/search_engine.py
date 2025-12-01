@@ -79,50 +79,67 @@ class SearchEngine:
         top_ids = {id for id, _ in top}
         return top_ids
 
-    def score_candidates(self, candidates: set[int]) -> list[tuple[DTO, float]]:
+    FIELD_SCORE_WEIGHT = 0.7
+    CONTEXT_SCORE_WEIGHT = 0.3
 
+    def score_candidates(self, candidates: set[int]) -> list[tuple[DTO, float]]:
+        """Score candidate documents based on field matches and context similarity"""
+
+        query_tokens = self.query.split()
         results = []
 
         for id in candidates:
-            score = 0.0
-            match_weights = 0.0
             candidate = self.cache[id]
 
-            for field, weight in candidate.search_values:
-                if isinstance(field, list):
-                    matches = process.extract(
-                        self.query,
-                        field,
-                        scorer=fuzz.WRatio,
-                        score_cutoff=60,
-                        limit=None,
-                    )
-                    field_score = (
-                        max(score for _, score, _ in matches) / 100.0
-                        if matches
-                        else 0.0
-                    )
-                else:
-                    field_score = fuzz.WRatio(self.query, field) / 100.0
+            field_score = self._score_fields(candidate)
 
-                # Only consider significant matches
-                if field_score >= self.NOISE_THRESHOLD:
-                    score += field_score * weight
-                    match_weights += weight
-                else:
-                    # small penalty for non-matching fields for tie breaking
-                    penalty = (
-                        (self.NOISE_THRESHOLD - field_score)
-                        * self.PENALITY_FACTOR
-                        * weight
-                    )
-                    score -= penalty
+            context_score = (
+                (fuzz.token_ratio(self.query, candidate.search_context) / 100.0)
+                if candidate.search_context and len(query_tokens) > 2
+                else 1.0
+            )
 
-            final_score = score / match_weights if match_weights > 0 else 0.0
+            final_score = (
+                field_score * self.FIELD_SCORE_WEIGHT
+                + context_score * self.CONTEXT_SCORE_WEIGHT
+            )
+
             if final_score > self.NOISE_THRESHOLD:
                 results.append((candidate.dto, final_score))
 
         return results
+
+    def _score_fields(self, candidate: Model) -> float:
+        score = 0.0
+        match_weights = 0.0
+
+        for field, weight in candidate.search_values:
+            if isinstance(field, list):
+                matches = process.extract(
+                    self.query,
+                    field,
+                    scorer=fuzz.WRatio,
+                    score_cutoff=60,
+                    limit=None,
+                )
+                field_score = (
+                    max(score for _, score, _ in matches) / 100.0 if matches else 0.0
+                )
+            else:
+                field_score = fuzz.WRatio(self.query, field) / 100.0
+
+            # Only consider significant matches
+            if field_score >= self.NOISE_THRESHOLD:
+                score += field_score * weight
+                match_weights += weight
+            else:
+                # small penalty for non-matching fields for tie breaking
+                penalty = (
+                    (self.NOISE_THRESHOLD - field_score) * self.PENALITY_FACTOR * weight
+                )
+                score -= penalty
+
+        return score / match_weights if match_weights > 0 else 0.0
 
     REMOVE_CHARS = (",", ".")
 

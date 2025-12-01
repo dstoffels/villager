@@ -55,3 +55,16 @@ class SubdivisionModel(Subdivision, Model):
         dto.parent = self.parent and extract_base(self.parent, depth=2)
         dto.country = self.country and extract_base(self.country, depth=2)
         return dto
+
+    # @property
+    # def search_context(self) -> str:
+    #     return " ".join(
+    #         [
+    #             self.name,
+    #             self.iso_suffix,
+    #             self.type or "",
+    #             self.country.alpha2 if self.country else "",
+    #             self.country.alpha3 if self.country else "",
+    #             self.country.name if self.country else "",
+    #         ],
+    #     ).lower()

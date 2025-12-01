@@ -49,3 +49,16 @@ class CityModel(City, Model):
         dto.admin2 = self.admin2 and extract_base(self.admin2, depth=2)
         dto.country = self.country and extract_base(self.country, depth=2)
         return dto
+
+    @property
+    def search_context(self) -> str:
+        return " ".join(
+            [
+                self.name,
+                self.admin1.iso_suffix if self.admin1 else "",
+                self.admin1.name if self.admin1 else "",
+                self.country.name if self.country else "",
+                self.country.alpha2 if self.country else "",
+                self.country.alpha3 if self.country else "",
+            ]
+        ).lower()
