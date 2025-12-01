@@ -19,6 +19,12 @@ class SearchEngine:
         for id, model in cache.items():
             for trigram in model.search_tokens.split("|"):
                 self.index[trigram].add(id)
+            if model.EXT_TRIGRAMS:
+                for field in model.EXT_TRIGRAMS:
+                    value = getattr(model, field, None)
+                    if value:
+                        for trigram in value.search_tokens.split("|"):
+                            self.index[trigram].add(id)
 
     def search(self, query: str, limit=10):
         if not query:
@@ -35,49 +41,42 @@ class SearchEngine:
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:limit]
 
-    def _get_candidates(self) -> set[int]:
+    def _get_candidates(self, max_candidates=1000) -> set[int]:
         """Get candidate document IDs matching the query via trigrams"""
         total_docs = len(self.cache)
 
-        # build list of trigrams with their candidate sets and document frequencies
+        # build list of (trigram, candidate_ids, idf)
         trigram_list: list[tuple[str, set[int], int]] = []
         for trigram in generate_trigrams(self.query):
             cands = self.index.get(trigram)
             if not cands:
                 continue
             df = len(cands)
-            trigram_list.append((trigram, cands, df))
+            idf = math.log((total_docs + 1) / (df + 1))
+            trigram_list.append((trigram, cands, idf))
 
         if not trigram_list:
             return set()
 
-        # compute weights for each trigram based on IDF, giving higher weight to rarer trigrams
-        trigram_weights: dict[str, float] = {}
-        for trigram, _, df in trigram_list:
-            trigram_weights[trigram] = math.log(
-                (total_docs + 1) / (df + 1)
-            )  # IDF weighting
+        trigram_list.sort(key=lambda x: x[2], reverse=True)
+
+        candidates = set()
+        for trigram, cands, _ in trigram_list:
+            candidates.update(cands)
+            if len(candidates) >= max_candidates:
+                break
 
         # aggregate scores for each candidate document
-        scores: dict[int, float] = {}
-        for trigram, cands, _ in trigram_list:
-            weight = trigram_weights[trigram]
-            for id in cands:
-                scores[id] = scores.get(id, 0.0) + weight
+        if len(candidates) > max_candidates:
+            scores: dict[int, float] = {}
+            for trigram, cands, idf in trigram_list:
+                for id in cands:
+                    if id in candidates:
+                        scores[id] = scores.get(id, 0.0) + idf
 
-        if not scores:
-            return set()
-
-        # select top-k candidates based on aggregated scores
-        top_k = max(10, min(total_docs // 50, 500))
-
-        if len(scores) <= top_k:
-            return set(scores.keys())
-
-        # get the top_k highest scoring document IDs
-        top = heapq.nlargest(top_k, scores.items(), key=lambda x: x[1])
-        top_ids = {id for id, _ in top}
-        return top_ids
+            top = heapq.nlargest(max_candidates, scores.items(), key=lambda x: x[1])
+            return {id for id, _ in top}
+        return candidates
 
     FIELD_SCORE_WEIGHT = 0.7
     CONTEXT_SCORE_WEIGHT = 0.3
@@ -91,13 +90,16 @@ class SearchEngine:
         for id in candidates:
             candidate = self.cache[id]
 
-            field_score = self._score_fields(candidate)
+            if fuzz.ratio(self.query, candidate.name.lower()) < 50:
+                continue
 
             context_score = (
                 (fuzz.token_ratio(self.query, candidate.search_context) / 100.0)
                 if candidate.search_context and len(query_tokens) > 2
                 else 1.0
             )
+
+            field_score = self._score_fields(candidate)
 
             final_score = (
                 field_score * self.FIELD_SCORE_WEIGHT

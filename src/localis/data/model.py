@@ -35,6 +35,9 @@ class Model(DTO):
     SEARCH_FIELDS: dict[str, float] = {}
     """Fields that can be used for searching. Key is the field name (can be nested with dots), value is the weight for search relevance."""
 
+    EXT_TRIGRAMS: tuple[str] = ()
+    """Fields that require external trigram indexing."""
+
     search_tokens: str = ""
 
     @property

@@ -16,14 +16,6 @@ class City(DTO):
 
 @dataclass(slots=True)
 class CityModel(City, Model):
-    SEARCH_FIELDS = {
-        "name": 1.0,
-        "admin1.name": 0.9,
-        "admin1.iso_suffix": 0.9,
-        "country.name": 0.4,
-        "country.alpha2": 0.4,
-        "country.alpha3": 0.4,
-    }
     FILTER_FIELDS = {
         "name": ("name",),
         "country": (
@@ -37,6 +29,16 @@ class CityModel(City, Model):
             "admin2.geonames_code",
         ),
     }
+    SEARCH_FIELDS = {
+        "name": 1.0,
+        "admin1.name": 0.9,
+        "admin1.iso_suffix": 0.9,
+        "country.name": 0.4,
+        "country.alpha2": 0.4,
+        "country.alpha3": 0.4,
+    }
+
+    EXT_TRIGRAMS = ("admin1", "country")
 
     admin1: SubdivisionModel
     admin2: SubdivisionModel
@@ -50,15 +52,19 @@ class CityModel(City, Model):
         dto.country = self.country and extract_base(self.country, depth=2)
         return dto
 
+    _search_context: str | None = None
+
     @property
     def search_context(self) -> str:
-        return " ".join(
-            [
-                self.name,
-                self.admin1.iso_suffix if self.admin1 else "",
-                self.admin1.name if self.admin1 else "",
-                self.country.name if self.country else "",
-                self.country.alpha2 if self.country else "",
-                self.country.alpha3 if self.country else "",
-            ]
-        ).lower()
+        if self._search_context is None:
+            self._search_context = " ".join(
+                [
+                    self.name,
+                    self.admin1.iso_suffix if self.admin1 else "",
+                    self.admin1.name if self.admin1 else "",
+                    self.country.name if self.country else "",
+                    self.country.alpha2 if self.country else "",
+                    self.country.alpha3 if self.country else "",
+                ]
+            ).lower()
+        return self._search_context
