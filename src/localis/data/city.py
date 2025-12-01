@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from .model import DTO, Model, extract_base
 from .country import CountryBase, CountryModel
 from .subdivision import SubdivisionBase, SubdivisionModel
-from sys import intern
 
 
 @dataclass(slots=True)

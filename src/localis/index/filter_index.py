@@ -3,7 +3,6 @@ from collections import defaultdict
 
 
 class FilterIndex:
-
     def __init__(self, cache: dict[int, Model], filter_fields: dict[str, tuple[str]]):
         self.cache = cache
         self.index: dict[str, dict[str, set[int]]] = defaultdict(

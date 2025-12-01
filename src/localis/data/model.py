@@ -4,7 +4,7 @@ from collections import defaultdict
 
 
 def extract_base(from_obj, depth=1):
-    """Returns an instance of a base class populated with subclass obj data. Can select from multiple base classes by index."""
+    """Returns an instance of a base class populated with subclass obj data. Depth indicates how many levels up the MRO to go."""
     target_cls = from_obj.__class__.__mro__[depth]
     field_names = {f.name for f in fields(target_cls)}
     data = {slot: getattr(from_obj, slot) for slot in field_names}
@@ -27,11 +27,13 @@ class DTO:
 
 
 class Model(DTO):
-    SEARCH_FIELDS: dict[str, float] = {}
     LOOKUP_FIELDS: tuple[str] = ()
 
     FILTER_FIELDS: dict[str, tuple[str]] = defaultdict(tuple)
     """Fields that can be used for filtering. Key is the filter name, value is a tuple of field names to search on."""
+
+    SEARCH_FIELDS: dict[str, float] = {}
+    """Fields that can be used for searching. Key is the field name (can be nested with dots), value is the weight for search relevance."""
 
     search_tokens: str = ""
 
@@ -59,11 +61,3 @@ class Model(DTO):
                 elif value is not None:
                     self._search_values.append((value.lower(), weight))
         return self._search_values
-
-    # _search_context: str | None = None
-
-    # @property
-    # def search_context(self):
-    #     if self._search_context is None:
-    #         self._search_context = " ".join(self.search_values)
-    #     return self._search_context

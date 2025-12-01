@@ -7,8 +7,13 @@ import heapq
 
 
 class SearchEngine:
-    def __init__(self, cache: dict[int, Model]):
+    def __init__(
+        self, cache: dict[int, Model], noise_threshold=0.6, penality_factor=0.15
+    ):
         self.cache = cache
+        self.NOISE_THRESHOLD = noise_threshold
+        self.PENALITY_FACTOR = penality_factor
+
         self.index: dict[str, set[int]] = defaultdict(set)
 
         for id, model in cache.items():
@@ -75,7 +80,6 @@ class SearchEngine:
         return top_ids
 
     def score_candidates(self, candidates: set[int]) -> list[tuple[DTO, float]]:
-        NOISE_THRESHOLD = 0.5
 
         results = []
 
@@ -102,16 +106,20 @@ class SearchEngine:
                     field_score = fuzz.WRatio(self.query, field) / 100.0
 
                 # Only consider significant matches
-                if field_score >= NOISE_THRESHOLD:
+                if field_score >= self.NOISE_THRESHOLD:
                     score += field_score * weight
                     match_weights += weight
                 else:
                     # small penalty for non-matching fields for tie breaking
-                    penalty = (NOISE_THRESHOLD - field_score) * 0.15 * weight
+                    penalty = (
+                        (self.NOISE_THRESHOLD - field_score)
+                        * self.PENALITY_FACTOR
+                        * weight
+                    )
                     score -= penalty
 
             final_score = score / match_weights if match_weights > 0 else 0.0
-            if final_score > NOISE_THRESHOLD:
+            if final_score > self.NOISE_THRESHOLD:
                 results.append((candidate.dto, final_score))
 
         return results

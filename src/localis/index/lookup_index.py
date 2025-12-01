@@ -5,7 +5,6 @@ class LookupIndex:
     def __init__(self, cache: dict[int, Model], lookup_fields: list[str]):
         self.cache = cache
         self.index: dict[str | int, int] = {}
-        print(lookup_fields)
         for id, model in cache.items():
             for field in lookup_fields:
                 key = getattr(model, field, None)
