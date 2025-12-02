@@ -14,23 +14,26 @@ class SearchEngine:
         self.NOISE_THRESHOLD = noise_threshold
         self.PENALITY_FACTOR = penality_factor
 
-        self.index: dict[str, set[int]] = defaultdict(set)
+        index: dict[str, set[int]] = defaultdict(set)
 
         for id, model in cache.items():
             for trigram in model.search_tokens.split("|"):
-                self.index[trigram].add(id)
+                index[trigram].add(id)
             if model.EXT_TRIGRAMS:
                 for field in model.EXT_TRIGRAMS:
                     value = getattr(model, field, None)
                     if value:
                         for trigram in value.search_tokens.split("|"):
-                            self.index[trigram].add(id)
+                            index[trigram].add(id)
+
+        self.index = index
 
     def search(self, query: str, limit=10):
         if not query:
             return []
 
         self.query = normalize(query)
+        self.query_trigrams = set(generate_trigrams(self.query))
 
         candidates = self._get_candidates()
 
@@ -46,7 +49,7 @@ class SearchEngine:
         total_docs = len(self.cache)
 
         # build list of (trigram, candidate_ids, idf)
-        trigram_list: list[tuple[str, set[int], int]] = []
+        trigram_list: list[tuple[str, set[int], float]] = []
         for trigram in generate_trigrams(self.query):
             cands = self.index.get(trigram)
             if not cands:
@@ -80,6 +83,18 @@ class SearchEngine:
 
     FIELD_SCORE_WEIGHT = 0.7
     CONTEXT_SCORE_WEIGHT = 0.3
+
+    def _score_trigrams(self, candidate: Model) -> float:
+        """Score candidate based on trigram overlap with the query"""
+        query_trigrams = self.query_trigrams
+        candidate_trigrams = set(candidate.search_tokens.split("|"))
+        overlap = len(query_trigrams & candidate_trigrams)
+        return overlap / len(query_trigrams) if query_trigrams else 0.0
+
+        intersection = query_trigrams.intersection(candidate_trigrams)
+        union = query_trigrams.union(candidate_trigrams)
+
+        return len(intersection) / len(union)
 
     def score_candidates(self, candidates: set[int]) -> list[tuple[DTO, float]]:
         """Score candidate documents based on field matches and context similarity"""

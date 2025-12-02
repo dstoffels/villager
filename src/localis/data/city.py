@@ -40,9 +40,9 @@ class CityModel(City, Model):
 
     EXT_TRIGRAMS = ("admin1", "country")
 
-    admin1: SubdivisionModel
-    admin2: SubdivisionModel
-    country: CountryModel
+    admin1: SubdivisionModel | None
+    admin2: SubdivisionModel | None
+    country: CountryModel | None
 
     @property
     def dto(self) -> City:
