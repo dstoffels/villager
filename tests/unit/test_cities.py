@@ -9,7 +9,7 @@ class TestGet:
     def test_get(self, field: str, city: City):
         """should fetch city by:"""
         value = getattr(city, field)
-        result = cities.get(value)
+        result = cities.lookup(value)
         assert isinstance(
             result, City
         ), f"expected a City, instead returned {result}. {field}: {value}"

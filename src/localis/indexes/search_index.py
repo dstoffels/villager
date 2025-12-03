@@ -6,7 +6,7 @@ import math
 import heapq
 
 
-class SearchEngine(Index):
+class SearchIndex(Index):
     def __init__(
         self,
         model_cls,

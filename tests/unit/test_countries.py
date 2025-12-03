@@ -9,7 +9,7 @@ class TestGet:
     def test_get(self, field: str, country: Country):
         """should fetch a country by:"""
         value = getattr(country, field)
-        result = countries.get(value)
+        result = countries.lookup(value)
         assert isinstance(result, Country)
         assert getattr(result, field) == value
 

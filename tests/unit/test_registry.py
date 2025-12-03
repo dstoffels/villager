@@ -18,7 +18,7 @@ class TestGet:
     """GET"""
 
     def test_none(self, registry: Registry):
-        """should return None if no match found"""
+        """should return None with invalid ID"""
         result = registry.get(-1)
         assert result is None
 

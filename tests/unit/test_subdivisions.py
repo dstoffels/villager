@@ -16,7 +16,7 @@ class TestGet:
             i += 1
 
         value = getattr(sub, field)
-        result = subdivisions.get(value)
+        result = subdivisions.lookup(value)
 
         assert isinstance(result, Subdivision)
         assert getattr(result, field) == value
@@ -28,7 +28,7 @@ class TestFilter:
     @pytest.mark.parametrize("field", ["type", "country"])
     def test_fields(self, field: str):
         """should return a list of subdivisions where the field kwarg is in:"""
-        sub = subdivisions.get(1)  # Andorra La Vella
+        sub = subdivisions.lookup(1)  # Andorra La Vella
         value = getattr(sub, field)
         if hasattr(value, "alpha2"):
             value = value.alpha2
@@ -40,7 +40,7 @@ class TestFilter:
     def test_alt_names(self):
         """should return a list of subdivisions where its alt_names field contains the alt_name kwarg"""
 
-        sub = subdivisions.get(7)  # Saint Julia de Loria
+        sub = subdivisions.lookup(7)  # Saint Julia de Loria
 
         alt_name = sub.aliases[0]  # grab the first alias
         results = subdivisions.filter(name=alt_name)
