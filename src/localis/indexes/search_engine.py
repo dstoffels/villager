@@ -7,10 +7,18 @@ import heapq
 
 
 class SearchEngine(Index):
-    def __init__(self, cache, path, noise_threshold=0.6, penalty_factor=0.15, **kwargs):
+    def __init__(
+        self,
+        model_cls,
+        cache,
+        filepath,
+        noise_threshold=0.6,
+        penalty_factor=0.15,
+        **kwargs,
+    ):
         self.NOISE_THRESHOLD = noise_threshold
         self.PENALITY_FACTOR = penalty_factor
-        super().__init__(cache, path, **kwargs)
+        super().__init__(model_cls, cache, filepath, **kwargs)
 
     # def __init__(
     #     self, cache: dict[int, Model], noise_threshold=0.6, penality_factor=0.15
