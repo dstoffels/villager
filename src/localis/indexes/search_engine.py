@@ -1,32 +1,35 @@
 from localis.models import Model, DTO
-from collections import defaultdict
 from rapidfuzz import fuzz, process
+from localis.indexes.index import Index
 from localis.utils import normalize, generate_trigrams
 import math
 import heapq
 
 
-class SearchEngine:
-    def __init__(
-        self, cache: dict[int, Model], noise_threshold=0.6, penality_factor=0.15
-    ):
-        self.cache = cache
+class SearchEngine(Index):
+    def __init__(self, cache, path, noise_threshold=0.6, penalty_factor=0.15, **kwargs):
         self.NOISE_THRESHOLD = noise_threshold
-        self.PENALITY_FACTOR = penality_factor
+        self.PENALITY_FACTOR = penalty_factor
+        super().__init__(cache, path, **kwargs)
 
-        index: dict[str, set[int]] = defaultdict(set)
+    # def __init__(
+    #     self, cache: dict[int, Model], noise_threshold=0.6, penality_factor=0.15
+    # ):
+    #     self.cache = cache
 
-        for id, model in cache.items():
-            for trigram in model.search_tokens.split("|"):
-                index[trigram].add(id)
-            if model.EXT_TRIGRAMS:
-                for field in model.EXT_TRIGRAMS:
-                    value = getattr(model, field, None)
-                    if value:
-                        for trigram in value.search_tokens.split("|"):
-                            index[trigram].add(id)
+    #     index: dict[str, set[int]] = defaultdict(set)
 
-        self.index = index
+    #     for id, model in cache.items():
+    #         for trigram in model.search_tokens.split("|"):
+    #             index[trigram].add(id)
+    #         if model.EXT_TRIGRAMS:
+    #             for field in model.EXT_TRIGRAMS:
+    #                 value = getattr(model, field, None)
+    #                 if value:
+    #                     for trigram in value.search_tokens.split("|"):
+    #                         index[trigram].add(id)
+
+    #     self.index = index
 
     def search(self, query: str, limit=10):
         if not query:
